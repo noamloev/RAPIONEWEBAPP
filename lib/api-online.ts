@@ -2,7 +2,7 @@ import axios from "axios";
 import { getToken } from "@/lib/auth";
 
 export const onlineApi = axios.create({
-  baseURL: "https://anuchka.onrender.com",
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
 });
 
 onlineApi.interceptors.request.use((config) => {
