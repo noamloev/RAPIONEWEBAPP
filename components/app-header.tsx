@@ -30,7 +30,7 @@ export function AppHeader({ title }: { title: string }) {
   }, []);
 
   function downloadLocalServer() {
-    window.open("https://your-server.com/download-local-server", "_blank");
+    window.open("https://github.com/noamloev/ANUCHKA-RELEASES/releases/download/v1.0.0/localserver.zip", "_blank");
   }
 
   return (
