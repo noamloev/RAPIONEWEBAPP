@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { PageShell } from "@/components/page-shell";
+import { onlineApi } from "@/lib/api-online";
 import { localApi } from "@/lib/api-local";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
@@ -38,6 +39,19 @@ type WorkerMonthlyStatsResponse = {
   }[];
 };
 
+type WorkerMonthlyCacheResponse =
+  | ({ found: false })
+  | ({
+      found: true;
+      year: number;
+      month: number;
+      subject: SubjectMode;
+      is_final?: boolean;
+      total_qty: number;
+      total_success_count: number;
+      workers: WorkerMonthlyStatsResponse["workers"];
+    });
+
 function SummaryCard({
   title,
   value,
@@ -70,19 +84,47 @@ export default function WorkerStatisticsPage() {
       setLoading(true);
       setError("");
 
-      const [year, mon] = month.split("-");
+      const [yearStr, monStr] = month.split("-");
+      const year = Number(yearStr);
+      const mon = Number(monStr);
 
-      const res = await localApi.get<WorkerMonthlyStatsResponse>("/worker-stats/monthly", {
-        params: {
-          year: Number(year),
-          month: Number(mon),
-          subject,
-        },
-      });
+      const now = new Date();
+      const isClosedMonth =
+        year < now.getFullYear() ||
+        (year === now.getFullYear() && mon < now.getMonth() + 1);
 
-      const payload = res.data;
+      let payload: WorkerMonthlyStatsResponse | null = null;
+
+      if (isClosedMonth) {
+        try {
+          const cacheRes = await onlineApi.get<WorkerMonthlyCacheResponse>("/worker-stats/monthly-cache", {
+            params: { year, month: mon, subject },
+          });
+
+          if ("found" in cacheRes.data && cacheRes.data.found) {
+            payload = {
+              year: cacheRes.data.year,
+              month: cacheRes.data.month,
+              subject: cacheRes.data.subject,
+              is_final: cacheRes.data.is_final,
+              total_qty: cacheRes.data.total_qty,
+              total_success_count: cacheRes.data.total_success_count,
+              workers: cacheRes.data.workers,
+            };
+          }
+        } catch {
+          // fallback to local below
+        }
+      }
+
+      if (!payload) {
+        const res = await localApi.get<WorkerMonthlyStatsResponse>("/worker-stats/monthly", {
+          params: { year, month: mon, subject },
+        });
+        payload = res.data;
+      }
+
       setData(payload);
-
       const firstWorker = payload?.workers?.[0]?.worker_name || "";
       setSelectedWorker(firstWorker);
     } catch (err: any) {

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { PageShell } from "@/components/page-shell";
+import { onlineApi } from "@/lib/api-online";
 import { localApi } from "@/lib/api-local";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
@@ -31,6 +32,25 @@ type MonthlyStatsResponse = {
     }[];
   }[];
 };
+
+type OnlineMonthlyCacheResponse =
+  | ({ found: false })
+  | ({
+      found: true;
+      year: number;
+      month: number;
+      is_final?: boolean;
+      total_qty: number;
+      categories: {
+        category_name: string;
+        qty: number;
+        items: {
+          item_code: string;
+          item_name: string;
+          qty: number;
+        }[];
+      }[];
+    });
 
 function SummaryCard({
   title,
@@ -62,18 +82,45 @@ export default function ProductStatisticsPage() {
       setLoading(true);
       setError("");
 
-      const [year, mon] = month.split("-");
+      const [yearStr, monStr] = month.split("-");
+      const year = Number(yearStr);
+      const mon = Number(monStr);
 
-      const res = await localApi.get<MonthlyStatsResponse>("/stats/monthly", {
-        params: {
-          year: Number(year),
-          month: Number(mon),
-        },
-      });
+      const now = new Date();
+      const isClosedMonth =
+        year < now.getFullYear() ||
+        (year === now.getFullYear() && mon < now.getMonth() + 1);
 
-      const payload = res.data;
+      let payload: MonthlyStatsResponse | null = null;
+
+      if (isClosedMonth) {
+        try {
+          const cacheRes = await onlineApi.get<OnlineMonthlyCacheResponse>("/stats/monthly-cache", {
+            params: { year, month: mon },
+          });
+
+          if ("found" in cacheRes.data && cacheRes.data.found) {
+            payload = {
+              year: cacheRes.data.year,
+              month: cacheRes.data.month,
+              is_final: cacheRes.data.is_final,
+              total_qty: cacheRes.data.total_qty,
+              categories: cacheRes.data.categories,
+            };
+          }
+        } catch {
+          // fallback to local below
+        }
+      }
+
+      if (!payload) {
+        const res = await localApi.get<MonthlyStatsResponse>("/stats/monthly", {
+          params: { year, month: mon },
+        });
+        payload = res.data;
+      }
+
       setData(payload);
-
       const firstCategory = payload?.categories?.[0]?.category_name || "";
       setSelectedCategory(firstCategory);
     } catch (err: any) {
