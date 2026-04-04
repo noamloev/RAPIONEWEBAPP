@@ -17,6 +17,32 @@ function formatDateForLocalReceipts(date: string) {
 
 type ViewMode = "sales" | "flags" | "runs";
 
+function LuxuryCard({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-[30px] border border-[var(--border)] bg-white/88 p-6 shadow-[var(--shadow-card)]">
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-[var(--primary-deep)]">{title}</h3>
+        {description ? (
+          <p className="text-sm text-[var(--muted)]">{description}</p>
+        ) : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function LuxuryInputClass() {
+  return "rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--border-strong)] focus:bg-white";
+}
+
 export default function DailyReportPage() {
   const today = new Date().toISOString().slice(0, 10);
 
@@ -132,9 +158,7 @@ export default function DailyReportPage() {
       });
 
       const jobId = res.data?.job_id;
-      if (!jobId) {
-        throw new Error("No job_id returned");
-      }
+      if (!jobId) throw new Error("No job_id returned");
 
       setDailyJobId(jobId);
       setDailyJobStatus("running");
@@ -238,42 +262,38 @@ export default function DailyReportPage() {
     <PageShell title="Daily Report">
       <div className="space-y-6">
         {error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
             {error}
           </div>
         ) : null}
 
         {successMessage ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <div className="rounded-2xl border border-[var(--success-border)] bg-[var(--success-bg)] px-4 py-3 text-sm text-[var(--success-text)]">
             {successMessage}
           </div>
         ) : null}
 
-        <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-rose-950">Filters & Actions</h3>
-            <p className="text-sm text-rose-500">
-              Choose a date and branch, run the daily pipeline, or check receipts.
-            </p>
-          </div>
-
+        <LuxuryCard
+          title="Filters & Actions"
+          description="Choose a date and branch, run the daily pipeline, or check receipts."
+        >
           <div className="grid gap-4 md:grid-cols-4">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-rose-800">Date</label>
+              <label className="text-sm font-medium text-[var(--primary-dark)]">Date</label>
               <input
                 type="date"
                 value={dateStr}
                 onChange={(e) => setDateStr(e.target.value)}
-                className="rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm outline-none transition focus:border-rose-400 focus:bg-white"
+                className={LuxuryInputClass()}
               />
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-rose-800">Branch</label>
+              <label className="text-sm font-medium text-[var(--primary-dark)]">Branch</label>
               <select
                 value={selectedBranch}
                 onChange={(e) => setSelectedBranch(e.target.value)}
-                className="rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm outline-none transition focus:border-rose-400 focus:bg-white"
+                className={LuxuryInputClass()}
               >
                 <option value="All branches">All branches</option>
                 {branches.map((branch) => (
@@ -285,7 +305,7 @@ export default function DailyReportPage() {
             </div>
 
             <div className="flex items-end">
-              <label className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm text-rose-800">
+              <label className="flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm text-[var(--primary-dark)]">
                 <input
                   type="checkbox"
                   checked={applyInventory}
@@ -297,12 +317,12 @@ export default function DailyReportPage() {
 
             <div className="flex items-end justify-end text-sm">
               <div
-                className={`rounded-2xl px-4 py-3 font-medium ${
+                className={`rounded-2xl border px-4 py-3 font-medium ${
                   selectedDateRunStatus === "GREEN"
-                    ? "bg-emerald-50 text-emerald-700"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                     : selectedDateRunStatus === "YELLOW"
-                    ? "bg-amber-50 text-amber-700"
-                    : "bg-slate-50 text-slate-600"
+                    ? "border-amber-200 bg-amber-50 text-amber-700"
+                    : "border-[var(--border)] bg-white text-[var(--muted-strong)]"
                 }`}
               >
                 Run Status: {selectedDateRunStatus}
@@ -314,7 +334,7 @@ export default function DailyReportPage() {
             <button
               onClick={handleRunDaily}
               disabled={runningDaily}
-              className="rounded-2xl bg-rose-500 px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {runningDaily ? "Running..." : "Run Daily"}
             </button>
@@ -322,7 +342,7 @@ export default function DailyReportPage() {
             <button
               onClick={handleCheckReceipts}
               disabled={checkingReceipts}
-              className="rounded-2xl border border-rose-200 bg-white px-5 py-3 text-sm font-medium text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {checkingReceipts ? "Checking..." : "Check Receipts"}
             </button>
@@ -330,19 +350,18 @@ export default function DailyReportPage() {
             <button
               onClick={refreshAll}
               disabled={loading}
-              className="rounded-2xl border border-rose-200 bg-white px-5 py-3 text-sm font-medium text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Refreshing..." : "Refresh"}
             </button>
           </div>
-        </section>
+        </LuxuryCard>
 
         {dailyJobId ? (
-          <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
+          <LuxuryCard title="Daily Run Progress">
             <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-rose-950">Daily Run Progress</h3>
-                <p className="text-sm text-rose-500">
+                <p className="text-sm text-[var(--muted)]">
                   {dailyJobStatus === "done"
                     ? "Completed"
                     : dailyJobStatus === "error"
@@ -357,7 +376,7 @@ export default function DailyReportPage() {
                     ? "bg-emerald-50 text-emerald-700"
                     : dailyJobStatus === "error"
                     ? "bg-red-50 text-red-700"
-                    : "bg-rose-50 text-rose-700"
+                    : "bg-[var(--card-soft)] text-[var(--primary-dark)]"
                 }`}
               >
                 {dailyJobStatus || "running"}
@@ -365,123 +384,69 @@ export default function DailyReportPage() {
             </div>
 
             <div>
-              <div className="mb-2 flex items-center justify-between text-sm text-rose-600">
+              <div className="mb-2 flex items-center justify-between text-sm text-[var(--muted-strong)]">
                 <span>Progress</span>
                 <span>{progressPercent}%</span>
               </div>
 
-              <div className="h-3 w-full rounded-full bg-rose-100">
+              <div className="h-3 w-full rounded-full bg-[var(--accent)]">
                 <div
                   className={`h-3 rounded-full transition-all ${
                     dailyJobStatus === "done"
                       ? "bg-emerald-500"
                       : dailyJobStatus === "error"
                       ? "bg-red-500"
-                      : "bg-rose-500"
+                      : "bg-[var(--primary-strong)]"
                   }`}
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
             </div>
-          </section>
+          </LuxuryCard>
         ) : null}
 
         <div className="grid gap-4 md:grid-cols-5">
-          <button
-            onClick={() => setSelectedView("sales")}
-            className={`rounded-3xl border p-5 text-left shadow-sm transition ${
-              selectedView === "sales"
-                ? "border-rose-300 bg-rose-50"
-                : "border-rose-200 bg-white hover:bg-rose-50/40"
-            }`}
-          >
-            <p className="text-sm text-rose-500">Sales Count</p>
-            <p className="mt-2 text-2xl font-semibold text-rose-950">
-              {summary?.sales_count ?? "--"}
-            </p>
-          </button>
-
-          <button
-            onClick={() => setSelectedView("sales")}
-            className={`rounded-3xl border p-5 text-left shadow-sm transition ${
-              selectedView === "sales"
-                ? "border-rose-300 bg-rose-50"
-                : "border-rose-200 bg-white hover:bg-rose-50/40"
-            }`}
-          >
-            <p className="text-sm text-rose-500">Revenue</p>
-            <p className="mt-2 text-2xl font-semibold text-rose-950">
-              {summary?.revenue ?? "--"}
-            </p>
-          </button>
-
-          <button
-            onClick={() => setSelectedView("flags")}
-            className={`rounded-3xl border p-5 text-left shadow-sm transition ${
-              selectedView === "flags"
-                ? "border-rose-300 bg-rose-50"
-                : "border-rose-200 bg-white hover:bg-rose-50/40"
-            }`}
-          >
-            <p className="text-sm text-rose-500">Flags</p>
-            <p className="mt-2 text-2xl font-semibold text-rose-950">{stats.flagsCount}</p>
-          </button>
-
-          <button
-            onClick={() => setSelectedView("flags")}
-            className={`rounded-3xl border p-5 text-left shadow-sm transition ${
-              selectedView === "flags"
-                ? "border-rose-300 bg-rose-50"
-                : "border-rose-200 bg-white hover:bg-rose-50/40"
-            }`}
-          >
-            <p className="text-sm text-rose-500">CRIT Flags</p>
-            <p className="mt-2 text-2xl font-semibold text-rose-950">{stats.critCount}</p>
-          </button>
-
-          <button
-            onClick={() => setSelectedView("runs")}
-            className={`rounded-3xl border p-5 text-left shadow-sm transition ${
-              selectedView === "runs"
-                ? "border-rose-300 bg-rose-50"
-                : "border-rose-200 bg-white hover:bg-rose-50/40"
-            }`}
-          >
-            <p className="text-sm text-rose-500">Run Status</p>
-            <p className="mt-2 text-2xl font-semibold text-rose-950">
-              {selectedDateRunStatus}
-            </p>
-          </button>
+          {[
+            { label: "Sales Count", value: summary?.sales_count ?? "--", view: "sales" as ViewMode },
+            { label: "Revenue", value: summary?.revenue ?? "--", view: "sales" as ViewMode },
+            { label: "Flags", value: stats.flagsCount, view: "flags" as ViewMode },
+            { label: "CRIT Flags", value: stats.critCount, view: "flags" as ViewMode },
+            { label: "Run Status", value: selectedDateRunStatus, view: "runs" as ViewMode },
+          ].map((item) => (
+            <button
+              key={item.label}
+              onClick={() => setSelectedView(item.view)}
+              className={`rounded-[28px] border p-5 text-left shadow-[var(--shadow-card)] transition ${
+                selectedView === item.view
+                  ? "border-[var(--border-strong)] bg-[linear-gradient(180deg,#fff8fb_0%,#f8e7ef_100%)]"
+                  : "border-[var(--border)] bg-white/88 hover:bg-[var(--card-soft)]"
+              }`}
+            >
+              <p className="text-sm text-[var(--muted)]">{item.label}</p>
+              <p className="mt-2 text-2xl font-semibold text-[var(--primary-deep)]">
+                {item.value}
+              </p>
+            </button>
+          ))}
         </div>
 
         {selectedView === "sales" ? (
-          <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-rose-950">Sales</h3>
-              <p className="text-sm text-rose-500">
-                Loaded sales rows for the selected date.
-              </p>
-            </div>
-
-            <div className="overflow-x-auto rounded-2xl border border-rose-100">
-              <table className="min-w-full divide-y divide-rose-100">
-                <thead className="bg-rose-50">
+          <LuxuryCard title="Sales" description="Loaded sales rows for the selected date.">
+            <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
+              <table className="min-w-full divide-y divide-[var(--border)]">
+                <thead className="bg-[var(--card-soft)]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Type</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Branch</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Invoice</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Customer</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Item</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Qty</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Unit Price</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Total</th>
+                    {["Type", "Date", "Branch", "Invoice", "Customer", "Item", "Qty", "Unit Price", "Total"].map((col) => (
+                      <th key={col} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">
+                        {col}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-rose-50 bg-white">
+                <tbody className="divide-y divide-[var(--border)] bg-white">
                   {sales.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="px-4 py-8 text-center text-sm text-rose-500">
+                      <td colSpan={9} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
                         No sales rows.
                       </td>
                     </tr>
@@ -493,21 +458,21 @@ export default function DailyReportPage() {
                           ? "bg-red-50 hover:bg-red-100/60"
                           : relatedFlag?.severity === "WARN"
                           ? "bg-amber-50 hover:bg-amber-100/60"
-                          : "hover:bg-rose-50/40";
+                          : "hover:bg-[var(--card-soft)]";
 
                       return (
                         <tr key={row.line_key} className={rowClass}>
-                          <td className="px-4 py-4 text-sm text-rose-700">{row.classification || "-"}</td>
-                          <td className="px-4 py-4 text-sm text-rose-700">
+                          <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.classification || "-"}</td>
+                          <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">
                             {row.doc_date ? new Date(row.doc_date).toLocaleString() : "-"}
                           </td>
-                          <td className="px-4 py-4 text-sm text-rose-800">{row.branch}</td>
-                          <td className="px-4 py-4 text-sm text-rose-700">{row.invoice_no || "-"}</td>
-                          <td className="px-4 py-4 text-sm text-rose-700">{row.customer_name || "-"}</td>
-                          <td className="px-4 py-4 text-sm text-rose-800">{row.item_name}</td>
-                          <td className="px-4 py-4 text-sm text-rose-700">{row.quantity}</td>
-                          <td className="px-4 py-4 text-sm text-rose-700">{row.unit_price ?? "-"}</td>
-                          <td className="px-4 py-4 text-sm text-rose-700">{row.total ?? "-"}</td>
+                          <td className="px-4 py-4 text-sm text-[var(--foreground)]">{row.branch}</td>
+                          <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.invoice_no || "-"}</td>
+                          <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.customer_name || "-"}</td>
+                          <td className="px-4 py-4 text-sm text-[var(--foreground)]">{row.item_name}</td>
+                          <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.quantity}</td>
+                          <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.unit_price ?? "-"}</td>
+                          <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.total ?? "-"}</td>
                         </tr>
                       );
                     })
@@ -515,34 +480,26 @@ export default function DailyReportPage() {
                 </tbody>
               </table>
             </div>
-          </section>
+          </LuxuryCard>
         ) : null}
 
         {selectedView === "flags" ? (
-          <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-rose-950">Flags</h3>
-              <p className="text-sm text-rose-500">
-                Warnings and critical audit flags for the selected date.
-              </p>
-            </div>
-
-            <div className="overflow-x-auto rounded-2xl border border-rose-100">
-              <table className="min-w-full divide-y divide-rose-100">
-                <thead className="bg-rose-50">
+          <LuxuryCard title="Flags" description="Warnings and critical audit flags for the selected date.">
+            <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
+              <table className="min-w-full divide-y divide-[var(--border)]">
+                <thead className="bg-[var(--card-soft)]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Severity</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Branch</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Item</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Invoice</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Reason</th>
+                    {["Severity", "Date", "Branch", "Item", "Invoice", "Reason"].map((col) => (
+                      <th key={col} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">
+                        {col}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-rose-50 bg-white">
+                <tbody className="divide-y divide-[var(--border)] bg-white">
                   {flags.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-rose-500">
+                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
                         No flags.
                       </td>
                     </tr>
@@ -555,38 +512,31 @@ export default function DailyReportPage() {
                             ? "bg-red-50 hover:bg-red-100/60"
                             : flag.severity === "WARN"
                             ? "bg-amber-50 hover:bg-amber-100/60"
-                            : "hover:bg-rose-50/40"
+                            : "hover:bg-[var(--card-soft)]"
                         }
                       >
-                        <td className="px-4 py-4 text-sm font-medium text-rose-800">{flag.severity}</td>
-                        <td className="px-4 py-4 text-sm text-rose-700">
+                        <td className="px-4 py-4 text-sm font-medium text-[var(--foreground)]">{flag.severity}</td>
+                        <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">
                           {flag.flag_date ? new Date(flag.flag_date).toLocaleString() : "-"}
                         </td>
-                        <td className="px-4 py-4 text-sm text-rose-700">{flag.branch || "-"}</td>
-                        <td className="px-4 py-4 text-sm text-rose-800">{flag.item_name || "-"}</td>
-                        <td className="px-4 py-4 text-sm text-rose-700">{flag.invoice_no || "-"}</td>
-                        <td className="px-4 py-4 text-sm text-rose-700">{flag.reason}</td>
+                        <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{flag.branch || "-"}</td>
+                        <td className="px-4 py-4 text-sm text-[var(--foreground)]">{flag.item_name || "-"}</td>
+                        <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{flag.invoice_no || "-"}</td>
+                        <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{flag.reason}</td>
                       </tr>
                     ))
                   )}
                 </tbody>
               </table>
             </div>
-          </section>
+          </LuxuryCard>
         ) : null}
 
         {selectedView === "runs" ? (
-          <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-rose-950">Run Statuses This Month</h3>
-              <p className="text-sm text-rose-500">
-                Daily run status history for the selected month.
-              </p>
-            </div>
-
+          <LuxuryCard title="Run Statuses This Month" description="Daily run status history for the selected month.">
             <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-4">
               {runStatuses.length === 0 ? (
-                <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-500">
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm text-[var(--muted)]">
                   No run statuses.
                 </div>
               ) : (
@@ -598,7 +548,7 @@ export default function DailyReportPage() {
                         ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                         : status.status === "YELLOW"
                         ? "border-amber-200 bg-amber-50 text-amber-700"
-                        : "border-slate-200 bg-slate-50 text-slate-600"
+                        : "border-[var(--border)] bg-white text-[var(--muted-strong)]"
                     }`}
                   >
                     <div className="font-medium">{status.date}</div>
@@ -607,7 +557,7 @@ export default function DailyReportPage() {
                 ))
               )}
             </div>
-          </section>
+          </LuxuryCard>
         ) : null}
       </div>
     </PageShell>

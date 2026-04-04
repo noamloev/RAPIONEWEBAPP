@@ -7,14 +7,14 @@ import { localApi } from "@/lib/api-local";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 const PIE_COLORS = [
-  "#f9a8d4",
-  "#f472b6",
-  "#fb7185",
-  "#fda4af",
-  "#fbcfe8",
-  "#fecdd3",
-  "#fda4af",
-  "#f9a8d4",
+  "#6f314d",
+  "#92506c",
+  "#b56a87",
+  "#c98aa1",
+  "#dbc0cd",
+  "#ead8e0",
+  "#a85f7b",
+  "#7f415d",
 ];
 
 type SubjectMode = "consultants" | "leads";
@@ -52,18 +52,29 @@ type WorkerMonthlyCacheResponse =
       workers: WorkerMonthlyStatsResponse["workers"];
     });
 
-function SummaryCard({
+function SummaryCard({ title, value }: { title: string; value: string | number }) {
+  return (
+    <div className="rounded-[28px] border border-[var(--border)] bg-white/88 p-5 shadow-[var(--shadow-card)]">
+      <p className="text-sm text-[var(--muted)]">{title}</p>
+      <p className="mt-2 text-2xl font-semibold text-[var(--primary-deep)]">{value}</p>
+    </div>
+  );
+}
+
+function Section({
   title,
-  value,
+  children,
 }: {
   title: string;
-  value: string | number;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-3xl border border-rose-200 bg-white p-5 shadow-sm">
-      <p className="text-sm text-rose-500">{title}</p>
-      <p className="mt-2 text-2xl font-semibold text-rose-950">{value}</p>
-    </div>
+    <section className="rounded-[30px] border border-[var(--border)] bg-white/88 p-6 shadow-[var(--shadow-card)]">
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-[var(--primary-deep)]">{title}</h3>
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -112,9 +123,7 @@ export default function WorkerStatisticsPage() {
               workers: cacheRes.data.workers,
             };
           }
-        } catch {
-          // fallback to local below
-        }
+        } catch {}
       }
 
       if (!payload) {
@@ -164,37 +173,34 @@ export default function WorkerStatisticsPage() {
     <PageShell title="Worker Statistics">
       <div className="space-y-6">
         {error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
             {error}
           </div>
         ) : null}
 
-        <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-rose-950">Filters</h3>
-              <p className="text-sm text-rose-500">
-                Choose a month and whether to view consultants or leads, then press refresh.
-              </p>
-            </div>
+        <Section title="Filters">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <p className="text-sm text-[var(--muted)]">
+              Choose a month and whether to view consultants or leads, then press refresh.
+            </p>
 
             <div className="flex flex-wrap items-end gap-3">
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-rose-800">Month</label>
+                <label className="text-sm font-medium text-[var(--primary-dark)]">Month</label>
                 <input
                   type="month"
                   value={month}
                   onChange={(e) => setMonth(e.target.value)}
-                  className="rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm outline-none transition focus:border-rose-400 focus:bg-white"
+                  className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
                 />
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-rose-800">View</label>
+                <label className="text-sm font-medium text-[var(--primary-dark)]">View</label>
                 <select
                   value={subject}
                   onChange={(e) => setSubject(e.target.value as SubjectMode)}
-                  className="rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm outline-none transition focus:border-rose-400 focus:bg-white"
+                  className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
                 >
                   <option value="consultants">Consultants</option>
                   <option value="leads">Leads</option>
@@ -204,13 +210,13 @@ export default function WorkerStatisticsPage() {
               <button
                 onClick={refreshAll}
                 disabled={loading}
-                className="rounded-2xl border border-rose-200 bg-white px-5 py-3 text-sm font-medium text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Refreshing..." : "Refresh"}
               </button>
             </div>
           </div>
-        </section>
+        </Section>
 
         <div className="grid gap-4 md:grid-cols-4">
           <SummaryCard title={subject === "consultants" ? "Total Rows" : "Total Leads"} value={totalQty} />
@@ -220,17 +226,13 @@ export default function WorkerStatisticsPage() {
         </div>
 
         <div className="grid gap-6 xl:grid-cols-2">
-          <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-rose-950">{subjectLabel} Breakdown</h3>
-            </div>
-
+          <Section title={`${subjectLabel} Breakdown`}>
             {loading ? (
-              <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-10 text-center text-sm text-rose-500">
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-10 text-center text-sm text-[var(--muted)]">
                 Loading chart...
               </div>
             ) : pieData.length === 0 ? (
-              <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-10 text-center text-sm text-rose-500">
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-10 text-center text-sm text-[var(--muted)]">
                 No data.
               </div>
             ) : (
@@ -256,29 +258,25 @@ export default function WorkerStatisticsPage() {
                 </ResponsiveContainer>
               </div>
             )}
-          </section>
+          </Section>
 
-          <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-rose-950">{subjectLabel} Table</h3>
-            </div>
-
-            <div className="overflow-x-auto rounded-2xl border border-rose-100">
-              <table className="min-w-full divide-y divide-rose-100">
-                <thead className="bg-rose-50">
+          <Section title={`${subjectLabel} Table`}>
+            <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
+              <table className="min-w-full divide-y divide-[var(--border)]">
+                <thead className="bg-[var(--card-soft)]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">
                       {subject === "consultants" ? "Consultant" : "Lead Worker"}
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Total</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Success</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-rose-700">Action</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">Total</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">Success</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-rose-50 bg-white">
+                <tbody className="divide-y divide-[var(--border)] bg-white">
                   {workers.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center text-sm text-rose-500">
+                      <td colSpan={4} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
                         No rows found.
                       </td>
                     </tr>
@@ -286,15 +284,15 @@ export default function WorkerStatisticsPage() {
                     workers.map((row) => (
                       <tr
                         key={row.worker_name}
-                        className={row.worker_name === selectedWorker ? "bg-rose-50" : "hover:bg-rose-50/40"}
+                        className={row.worker_name === selectedWorker ? "bg-[var(--card-soft)]" : "hover:bg-[var(--card-soft)]"}
                       >
-                        <td className="px-4 py-4 text-sm font-medium text-rose-900">{row.worker_name}</td>
-                        <td className="px-4 py-4 text-sm text-rose-700">{row.qty}</td>
-                        <td className="px-4 py-4 text-sm text-rose-700">{row.success_count}</td>
+                        <td className="px-4 py-4 text-sm font-medium text-[var(--primary-deep)]">{row.worker_name}</td>
+                        <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.qty}</td>
+                        <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.success_count}</td>
                         <td className="px-4 py-4 text-right">
                           <button
                             onClick={() => setSelectedWorker(row.worker_name)}
-                            className="rounded-xl border border-rose-200 px-3 py-2 text-xs font-medium text-rose-700 transition hover:bg-rose-50"
+                            className="rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)]"
                           >
                             View Details
                           </button>
@@ -305,47 +303,43 @@ export default function WorkerStatisticsPage() {
                 </tbody>
               </table>
             </div>
-          </section>
+          </Section>
         </div>
 
-        <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-rose-950">
-              {subject === "consultants" ? "True / False Breakdown" : "Status Breakdown"}
-            </h3>
-          </div>
-
-          <div className="overflow-x-auto rounded-2xl border border-rose-100">
-            <table className="min-w-full divide-y divide-rose-100">
-              <thead className="bg-rose-50">
+        <Section title={subject === "consultants" ? "True / False Breakdown" : "Status Breakdown"}>
+          <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
+            <table className="min-w-full divide-y divide-[var(--border)]">
+              <thead className="bg-[var(--card-soft)]">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Type</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Value</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Count</th>
+                  {["Type", "Value", "Count"].map((col) => (
+                    <th key={col} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">
+                      {col}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-rose-50 bg-white">
+              <tbody className="divide-y divide-[var(--border)] bg-white">
                 {!selectedWorkerData || selectedWorkerData.items.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-4 py-8 text-center text-sm text-rose-500">
+                    <td colSpan={3} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
                       No details found.
                     </td>
                   </tr>
                 ) : (
                   selectedWorkerData.items.map((row, idx) => (
-                    <tr key={`${row.item_name}-${idx}`} className="hover:bg-rose-50/40">
-                      <td className="px-4 py-4 text-sm font-medium text-rose-900">
+                    <tr key={`${row.item_name}-${idx}`} className="hover:bg-[var(--card-soft)]">
+                      <td className="px-4 py-4 text-sm font-medium text-[var(--primary-deep)]">
                         {subject === "consultants" ? "Closed Flag" : "Lead Status"}
                       </td>
-                      <td className="px-4 py-4 text-sm text-rose-800">{row.item_name}</td>
-                      <td className="px-4 py-4 text-sm text-rose-700">{row.qty}</td>
+                      <td className="px-4 py-4 text-sm text-[var(--foreground)]">{row.item_name}</td>
+                      <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.qty}</td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
           </div>
-        </section>
+        </Section>
       </div>
     </PageShell>
   );

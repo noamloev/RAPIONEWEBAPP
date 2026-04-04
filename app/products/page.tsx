@@ -104,47 +104,44 @@ export default function ProductsPage() {
   return (
     <PageShell title="Products">
       <div className="space-y-6">
-        <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
+        <section className="rounded-[30px] border border-[var(--border)] bg-white/88 p-6 shadow-[var(--shadow-card)]">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-rose-950">Add Product</h3>
-            <p className="text-sm text-rose-500">
+            <h3 className="text-lg font-semibold text-[var(--primary-deep)]">Add Product</h3>
+            <p className="text-sm text-[var(--muted)]">
               Add a new product to the company catalog.
             </p>
           </div>
 
-          <form
-            onSubmit={handleAddProduct}
-            className="grid gap-4 md:grid-cols-4"
-          >
+          <form onSubmit={handleAddProduct} className="grid gap-4 md:grid-cols-4">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-rose-800">Item Code</label>
+              <label className="text-sm font-medium text-[var(--primary-dark)]">Item Code</label>
               <input
                 value={itemCode}
                 onChange={(e) => setItemCode(e.target.value)}
-                className="rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm outline-none transition focus:border-rose-400 focus:bg-white"
+                className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
                 placeholder="e.g. HALLURA-1"
               />
             </div>
 
             <div className="flex flex-col gap-2 md:col-span-2">
-              <label className="text-sm font-medium text-rose-800">Item Name</label>
+              <label className="text-sm font-medium text-[var(--primary-dark)]">Item Name</label>
               <input
                 value={itemName}
                 onChange={(e) => setItemName(e.target.value)}
-                className="rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm outline-none transition focus:border-rose-400 focus:bg-white"
+                className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
                 placeholder="Product name"
               />
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-rose-800">Base Price</label>
+              <label className="text-sm font-medium text-[var(--primary-dark)]">Base Price</label>
               <input
                 value={basePrice}
                 onChange={(e) => setBasePrice(e.target.value)}
                 type="number"
                 step="0.01"
                 min="0"
-                className="rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm outline-none transition focus:border-rose-400 focus:bg-white"
+                className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
                 placeholder="0.00"
               />
             </div>
@@ -153,7 +150,7 @@ export default function ProductsPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-2xl bg-rose-500 px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {saving ? "Adding..." : "Add Product"}
               </button>
@@ -161,11 +158,11 @@ export default function ProductsPage() {
           </form>
         </section>
 
-        <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
+        <section className="rounded-[30px] border border-[var(--border)] bg-white/88 p-6 shadow-[var(--shadow-card)]">
           <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-rose-950">Products List</h3>
-              <p className="text-sm text-rose-500">
+              <h3 className="text-lg font-semibold text-[var(--primary-deep)]">Products List</h3>
+              <p className="text-sm text-[var(--muted)]">
                 Browse, search, and manage active products.
               </p>
             </div>
@@ -174,14 +171,14 @@ export default function ProductsPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-72 rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm outline-none transition focus:border-rose-400 focus:bg-white"
+                className="w-72 rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
                 placeholder="Search by code, name, barcode..."
               />
 
               <button
                 onClick={loadProducts}
                 disabled={loading}
-                className="rounded-2xl border border-rose-200 bg-white px-5 py-3 text-sm font-medium text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Refreshing..." : "Refresh"}
               </button>
@@ -189,71 +186,61 @@ export default function ProductsPage() {
           </div>
 
           {error ? (
-            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="mb-4 rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
               {error}
             </div>
           ) : null}
 
-          <div className="overflow-x-auto rounded-2xl border border-rose-100">
-            <table className="min-w-full divide-y divide-rose-100">
-              <thead className="bg-rose-50">
+          <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
+            <table className="min-w-full divide-y divide-[var(--border)]">
+              <thead className="bg-[var(--card-soft)]">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">
-                    Code
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">
-                    Barcode
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">
-                    Base Price
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">
-                    Currency
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-rose-700">
-                    Actions
-                  </th>
+                  {["Code", "Name", "Barcode", "Base Price", "Currency", "Actions"].map((col) => (
+                    <th
+                      key={col}
+                      className={`px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)] ${col === "Actions" ? "text-right" : "text-left"}`}
+                    >
+                      {col}
+                    </th>
+                  ))}
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-rose-50 bg-white">
+              <tbody className="divide-y divide-[var(--border)] bg-white">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-rose-500">
+                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-[var(--muted)]">
                       Loading products...
                     </td>
                   </tr>
                 ) : filteredProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-rose-500">
+                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-[var(--muted)]">
                       No products found.
                     </td>
                   </tr>
                 ) : (
                   filteredProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-rose-50/40">
-                      <td className="px-4 py-4 text-sm font-medium text-rose-900">
+                    <tr key={product.id} className="hover:bg-[var(--card-soft)]">
+                      <td className="px-4 py-4 text-sm font-medium text-[var(--primary-deep)]">
                         {product.item_code}
                       </td>
-                      <td className="px-4 py-4 text-sm text-rose-800">
+                      <td className="px-4 py-4 text-sm text-[var(--foreground)]">
                         {product.item_name}
                       </td>
-                      <td className="px-4 py-4 text-sm text-rose-600">
+                      <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">
                         {product.barcode || "-"}
                       </td>
-                      <td className="px-4 py-4 text-sm text-rose-800">
+                      <td className="px-4 py-4 text-sm text-[var(--foreground)]">
                         {product.base_price ?? "-"}
                       </td>
-                      <td className="px-4 py-4 text-sm text-rose-600">
+                      <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">
                         {product.currency || "ILS"}
                       </td>
                       <td className="px-4 py-4 text-right">
                         <button
                           onClick={() => handleDeleteProduct(product.item_name)}
-                          className="rounded-xl border border-rose-200 px-3 py-2 text-xs font-medium text-rose-700 transition hover:bg-rose-50"
+                          className="rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)]"
                         >
                           Deactivate
                         </button>

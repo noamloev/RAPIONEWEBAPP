@@ -95,28 +95,28 @@ export default function SettingsPage() {
     <PageShell title="Settings">
       <div className="space-y-6">
         {error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
             {error}
           </div>
         ) : null}
 
         {success ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <div className="rounded-2xl border border-[var(--success-border)] bg-[var(--success-bg)] px-4 py-3 text-sm text-[var(--success-text)]">
             {success}
           </div>
         ) : null}
 
-        <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
+        <section className="rounded-[30px] border border-[var(--border)] bg-white/88 p-6 shadow-[var(--shadow-card)]">
           <div className="mb-5">
-            <h2 className="text-xl font-semibold text-rose-950">Statistics Staff</h2>
-            <p className="mt-1 text-sm text-rose-500">
+            <h2 className="text-xl font-semibold text-[var(--primary-deep)]">Statistics Staff</h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
               Choose which names the local scraping should use for consultants and leads.
             </p>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium text-rose-800">
+              <label className="mb-2 block text-sm font-medium text-[var(--primary-dark)]">
                 Consultant Names
               </label>
               <textarea
@@ -124,15 +124,13 @@ export default function SettingsPage() {
                 onChange={(e) => setConsultantsText(e.target.value)}
                 rows={12}
                 placeholder={"אדית רוסו\nורדית\nחן גבלן"}
-                className="w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900 outline-none transition focus:border-rose-400 focus:bg-white"
+                className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
               />
-              <p className="mt-2 text-xs text-rose-500">
-                One consultant name per line.
-              </p>
+              <p className="mt-2 text-xs text-[var(--muted)]">One consultant name per line.</p>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-rose-800">
+              <label className="mb-2 block text-sm font-medium text-[var(--primary-dark)]">
                 Lead Agent Names
               </label>
               <textarea
@@ -140,26 +138,24 @@ export default function SettingsPage() {
                 onChange={(e) => setLeadsText(e.target.value)}
                 rows={12}
                 placeholder={"עדן אמבר\nמוריאל ברכה\nשרית"}
-                className="w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900 outline-none transition focus:border-rose-400 focus:bg-white"
+                className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
               />
-              <p className="mt-2 text-xs text-rose-500">
-                One lead agent name per line.
-              </p>
+              <p className="mt-2 text-xs text-[var(--muted)]">One lead agent name per line.</p>
             </div>
           </div>
         </section>
 
-        <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
+        <section className="rounded-[30px] border border-[var(--border)] bg-white/88 p-6 shadow-[var(--shadow-card)]">
           <div className="mb-5">
-            <h2 className="text-xl font-semibold text-rose-950">Cache Settings</h2>
-            <p className="mt-1 text-sm text-rose-500">
+            <h2 className="text-xl font-semibold text-[var(--primary-deep)]">Cache Settings</h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
               Control how long local statistics stay cached and whether closed months are saved online.
             </p>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium text-rose-800">
+              <label className="mb-2 block text-sm font-medium text-[var(--primary-dark)]">
                 Local Cache Minutes
               </label>
               <input
@@ -167,15 +163,15 @@ export default function SettingsPage() {
                 min={1}
                 value={statsCacheMinutes}
                 onChange={(e) => setStatsCacheMinutes(Number(e.target.value))}
-                className="w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900 outline-none transition focus:border-rose-400 focus:bg-white"
+                className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
               />
-              <p className="mt-2 text-xs text-rose-500">
+              <p className="mt-2 text-xs text-[var(--muted)]">
                 Example: 60 means one hour local cache.
               </p>
             </div>
 
             <div className="flex items-end">
-              <label className="flex w-full items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+              <label className="flex w-full items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm text-[var(--primary-dark)]">
                 <input
                   type="checkbox"
                   checked={saveClosedMonths}
@@ -188,10 +184,10 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
+        <section className="rounded-[30px] border border-[var(--border)] bg-white/88 p-6 shadow-[var(--shadow-card)]">
           <div className="mb-5">
-            <h2 className="text-xl font-semibold text-rose-950">Session</h2>
-            <p className="mt-1 text-sm text-rose-500">
+            <h2 className="text-xl font-semibold text-[var(--primary-deep)]">Session</h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
               Save your changes or end the current session.
             </p>
           </div>
@@ -200,7 +196,7 @@ export default function SettingsPage() {
             <button
               onClick={saveSettings}
               disabled={saving || loading}
-              className="rounded-2xl bg-rose-500 px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? "Saving..." : "Save Settings"}
             </button>
@@ -208,14 +204,14 @@ export default function SettingsPage() {
             <button
               onClick={loadSettings}
               disabled={saving || loading}
-              className="rounded-2xl border border-rose-200 bg-white px-5 py-3 text-sm font-medium text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Loading..." : "Reload"}
             </button>
 
             <button
               onClick={logout}
-              className="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-medium text-red-700 transition hover:bg-red-100"
+              className="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100"
             >
               Logout
             </button>

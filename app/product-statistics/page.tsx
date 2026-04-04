@@ -7,14 +7,14 @@ import { localApi } from "@/lib/api-local";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 const PIE_COLORS = [
-  "#f9a8d4",
-  "#f472b6",
-  "#fb7185",
-  "#fda4af",
-  "#fbcfe8",
-  "#fecdd3",
-  "#fda4af",
-  "#f9a8d4",
+  "#6f314d",
+  "#92506c",
+  "#b56a87",
+  "#c98aa1",
+  "#dbc0cd",
+  "#ead8e0",
+  "#a85f7b",
+  "#7f415d",
 ];
 
 type MonthlyStatsResponse = {
@@ -52,18 +52,29 @@ type OnlineMonthlyCacheResponse =
       }[];
     });
 
-function SummaryCard({
+function SummaryCard({ title, value }: { title: string; value: string | number }) {
+  return (
+    <div className="rounded-[28px] border border-[var(--border)] bg-white/88 p-5 shadow-[var(--shadow-card)]">
+      <p className="text-sm text-[var(--muted)]">{title}</p>
+      <p className="mt-2 text-2xl font-semibold text-[var(--primary-deep)]">{value}</p>
+    </div>
+  );
+}
+
+function Section({
   title,
-  value,
+  children,
 }: {
   title: string;
-  value: string | number;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-3xl border border-rose-200 bg-white p-5 shadow-sm">
-      <p className="text-sm text-rose-500">{title}</p>
-      <p className="mt-2 text-2xl font-semibold text-rose-950">{value}</p>
-    </div>
+    <section className="rounded-[30px] border border-[var(--border)] bg-white/88 p-6 shadow-[var(--shadow-card)]">
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-[var(--primary-deep)]">{title}</h3>
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -108,9 +119,7 @@ export default function ProductStatisticsPage() {
               categories: cacheRes.data.categories,
             };
           }
-        } catch {
-          // fallback to local below
-        }
+        } catch {}
       }
 
       if (!payload) {
@@ -161,41 +170,38 @@ export default function ProductStatisticsPage() {
     <PageShell title="Product Statistics">
       <div className="space-y-6">
         {error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
             {error}
           </div>
         ) : null}
 
-        <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-rose-950">Filters</h3>
-              <p className="text-sm text-rose-500">
-                Choose a month, then press refresh.
-              </p>
-            </div>
+        <Section title="Filters">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <p className="text-sm text-[var(--muted)]">
+              Choose a month, then press refresh.
+            </p>
 
             <div className="flex items-end gap-3">
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-rose-800">Month</label>
+                <label className="text-sm font-medium text-[var(--primary-dark)]">Month</label>
                 <input
                   type="month"
                   value={month}
                   onChange={(e) => setMonth(e.target.value)}
-                  className="rounded-2xl border border-rose-200 bg-rose-50/40 px-4 py-3 text-sm outline-none transition focus:border-rose-400 focus:bg-white"
+                  className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
                 />
               </div>
 
               <button
                 onClick={refreshAll}
                 disabled={loading}
-                className="rounded-2xl border border-rose-200 bg-white px-5 py-3 text-sm font-medium text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Refreshing..." : "Refresh"}
               </button>
             </div>
           </div>
-        </section>
+        </Section>
 
         <div className="grid gap-4 md:grid-cols-4">
           <SummaryCard title="Total Units Sold" value={totalQty} />
@@ -205,17 +211,13 @@ export default function ProductStatisticsPage() {
         </div>
 
         <div className="grid gap-6 xl:grid-cols-2">
-          <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-rose-950">Categories Breakdown</h3>
-            </div>
-
+          <Section title="Categories Breakdown">
             {loading ? (
-              <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-10 text-center text-sm text-rose-500">
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-10 text-center text-sm text-[var(--muted)]">
                 Loading chart...
               </div>
             ) : pieData.length === 0 ? (
-              <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-10 text-center text-sm text-rose-500">
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-10 text-center text-sm text-[var(--muted)]">
                 No category data.
               </div>
             ) : (
@@ -241,26 +243,27 @@ export default function ProductStatisticsPage() {
                 </ResponsiveContainer>
               </div>
             )}
-          </section>
+          </Section>
 
-          <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-rose-950">Categories Table</h3>
-            </div>
-
-            <div className="overflow-x-auto rounded-2xl border border-rose-100">
-              <table className="min-w-full divide-y divide-rose-100">
-                <thead className="bg-rose-50">
+          <Section title="Categories Table">
+            <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
+              <table className="min-w-full divide-y divide-[var(--border)]">
+                <thead className="bg-[var(--card-soft)]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Category</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Qty</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-rose-700">Action</th>
+                    {["Category", "Qty", "Action"].map((col) => (
+                      <th
+                        key={col}
+                        className={`px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)] ${col === "Action" ? "text-right" : "text-left"}`}
+                      >
+                        {col}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-rose-50 bg-white">
+                <tbody className="divide-y divide-[var(--border)] bg-white">
                   {categories.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="px-4 py-8 text-center text-sm text-rose-500">
+                      <td colSpan={3} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
                         No categories found.
                       </td>
                     </tr>
@@ -268,14 +271,14 @@ export default function ProductStatisticsPage() {
                     categories.map((row) => (
                       <tr
                         key={row.category_name}
-                        className={row.category_name === selectedCategory ? "bg-rose-50" : "hover:bg-rose-50/40"}
+                        className={row.category_name === selectedCategory ? "bg-[var(--card-soft)]" : "hover:bg-[var(--card-soft)]"}
                       >
-                        <td className="px-4 py-4 text-sm font-medium text-rose-900">{row.category_name}</td>
-                        <td className="px-4 py-4 text-sm text-rose-700">{row.qty}</td>
+                        <td className="px-4 py-4 text-sm font-medium text-[var(--primary-deep)]">{row.category_name}</td>
+                        <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.qty}</td>
                         <td className="px-4 py-4 text-right">
                           <button
                             onClick={() => setSelectedCategory(row.category_name)}
-                            className="rounded-xl border border-rose-200 px-3 py-2 text-xs font-medium text-rose-700 transition hover:bg-rose-50"
+                            className="rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)]"
                           >
                             View Products
                           </button>
@@ -286,43 +289,41 @@ export default function ProductStatisticsPage() {
                 </tbody>
               </table>
             </div>
-          </section>
+          </Section>
         </div>
 
-        <section className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-rose-950">Products In Category</h3>
-          </div>
-
-          <div className="overflow-x-auto rounded-2xl border border-rose-100">
-            <table className="min-w-full divide-y divide-rose-100">
-              <thead className="bg-rose-50">
+        <Section title="Products In Category">
+          <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
+            <table className="min-w-full divide-y divide-[var(--border)]">
+              <thead className="bg-[var(--card-soft)]">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Code</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Product</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">Qty</th>
+                  {["Code", "Product", "Qty"].map((col) => (
+                    <th key={col} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">
+                      {col}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-rose-50 bg-white">
+              <tbody className="divide-y divide-[var(--border)] bg-white">
                 {!selectedCategoryData || selectedCategoryData.items.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-4 py-8 text-center text-sm text-rose-500">
+                    <td colSpan={3} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
                       No products found for this category.
                     </td>
                   </tr>
                 ) : (
                   selectedCategoryData.items.map((row) => (
-                    <tr key={`${row.item_code}-${row.item_name}`} className="hover:bg-rose-50/40">
-                      <td className="px-4 py-4 text-sm font-medium text-rose-900">{row.item_code || "-"}</td>
-                      <td className="px-4 py-4 text-sm text-rose-800">{row.item_name}</td>
-                      <td className="px-4 py-4 text-sm text-rose-700">{row.qty}</td>
+                    <tr key={`${row.item_code}-${row.item_name}`} className="hover:bg-[var(--card-soft)]">
+                      <td className="px-4 py-4 text-sm font-medium text-[var(--primary-deep)]">{row.item_code || "-"}</td>
+                      <td className="px-4 py-4 text-sm text-[var(--foreground)]">{row.item_name}</td>
+                      <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.qty}</td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
           </div>
-        </section>
+        </Section>
       </div>
     </PageShell>
   );
