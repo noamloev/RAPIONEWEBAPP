@@ -10,13 +10,17 @@ import {
   PieChart,
   Users,
   Settings,
+  PhoneIcon,
+  PersonStandingIcon,
 } from "lucide-react";
 
 const items = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/clients", label: "Clients", icon: PersonStandingIcon },
   { href: "/products", label: "Products", icon: Package },
   { href: "/inventory", label: "Inventory", icon: Boxes },
   { href: "/daily-report", label: "Daily Report", icon: FileBarChart2 },
+  { href: "/follow-up", label: "Follow Up", icon: PhoneIcon },
   { href: "/product-statistics", label: "Product Statistics", icon: PieChart },
   { href: "/worker-statistics", label: "Worker Statistics", icon: Users },
   { href: "/settings", label: "Settings", icon: Settings },

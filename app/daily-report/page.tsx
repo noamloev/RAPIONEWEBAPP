@@ -5,6 +5,8 @@ import { PageShell } from "@/components/page-shell";
 import { onlineApi } from "@/lib/api-online";
 import { localApi } from "@/lib/api-local";
 import { Branch, DailyRunStatus, DailySummary, FlagRow, SaleRow } from "@/lib/types";
+import { addLocalAlert } from "@/lib/local-alerts";
+
 
 function formatDateForApi(date: string) {
   return date;
@@ -46,6 +48,7 @@ function LuxuryInputClass() {
 export default function DailyReportPage() {
   const today = new Date().toISOString().slice(0, 10);
 
+  const [receiptsJobId, setReceiptsJobId] = useState("");
   const [dailyJobId, setDailyJobId] = useState<string>("");
   const [dailyJobStatus, setDailyJobStatus] = useState<string>("");
   const [dailyProgressLines, setDailyProgressLines] = useState<string[]>([]);
@@ -139,6 +142,68 @@ export default function DailyReportPage() {
     refreshAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateStr, selectedBranch]);
+  useEffect(() => {
+  if (!receiptsJobId) return;
+
+  const timer = setInterval(async () => {
+    try {
+      const res = await localApi.get("/local/check-receipts/status", {
+        params: { job_id: receiptsJobId },
+      });
+
+      const data = res.data;
+      if (!data?.ok) return;
+
+      if (data.status === "done") {
+        clearInterval(timer);
+        setCheckingReceipts(false);
+
+        const result = data.result;
+        const missingReceiptCount = result?.missing_receipt?.length ?? 0;
+        const missingInvoiceCount = result?.missing_invoice?.length ?? 0;
+        const mismatchCount = result?.mismatch?.length ?? 0;
+
+        addLocalAlert({
+          level:
+            missingReceiptCount > 0 ||
+            missingInvoiceCount > 0 ||
+            mismatchCount > 0
+              ? "warn"
+              : "success",
+          title: `Receipts check finished for ${result?.date_str ?? ""}`,
+          message:
+            `Invoices: ${result?.grand_inv ?? 0}, Receipts: ${result?.grand_rec ?? 0}, Diff: ${result?.grand_diff ?? 0}. ` +
+            `Missing receipt: ${missingReceiptCount}, Missing invoice: ${missingInvoiceCount}, Mismatch: ${mismatchCount}.`,
+        });
+
+        setSuccessMessage("Receipts check finished. See alerts in the bell.");
+      }
+
+      if (data.status === "error") {
+        clearInterval(timer);
+        setCheckingReceipts(false);
+
+        addLocalAlert({
+          level: "error",
+          title: "Receipts check failed",
+          message: data.error || "Unknown receipts check error",
+        });
+
+        setError(data.error || "Receipts check failed");
+      }
+    } catch (err: any) {
+      clearInterval(timer);
+      setCheckingReceipts(false);
+      setError(
+        err?.response?.data?.detail ||
+          err?.message ||
+          "Failed to fetch receipts check status"
+      );
+    }
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, [receiptsJobId]);
 
   async function handleRunDaily() {
     try {
@@ -207,24 +272,27 @@ export default function DailyReportPage() {
   }, [dailyJobId]);
 
   async function handleCheckReceipts() {
-    try {
-      setCheckingReceipts(true);
-      setError("");
-      setSuccessMessage("");
+  try {
+    setCheckingReceipts(true);
+    setError("");
+    setSuccessMessage("");
 
-      await localApi.post("/local/check-receipts", null, {
-        params: {
-          date_str: formatDateForLocalReceipts(dateStr),
-        },
-      });
+    const res = await localApi.post("/local/check-receipts/start", null, {
+      params: {
+        date_str: formatDateForLocalReceipts(dateStr),
+      },
+    });
 
-      setSuccessMessage("Receipts check started. Telegram will be sent when finished.");
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || err?.message || "Failed to check receipts");
-    } finally {
-      setCheckingReceipts(false);
-    }
+    const jobId = res.data?.job_id;
+    if (!jobId) throw new Error("No receipts job_id returned");
+
+    setReceiptsJobId(jobId);
+    setSuccessMessage("Receipts check started.");
+  } catch (err: any) {
+    setCheckingReceipts(false);
+    setError(err?.response?.data?.detail || err?.message || "Failed to check receipts");
   }
+}
 
   const stats = useMemo(() => {
     const flagsCount = flags.length;
