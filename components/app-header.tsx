@@ -42,7 +42,7 @@ export function AppHeader({ title }: { title: string }) {
 
   function downloadLocalServer() {
     window.open(
-      "https://github.com/noamloev/ANUCHKA-RELEASES/releases/download/v1.0.2/server.zip",
+      "https://github.com/noamloev/ANUCHKA-RELEASES/releases/download/v1.0.3/server.zip",
       "_blank"
     );
   }
