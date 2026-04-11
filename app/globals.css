@@ -90,3 +90,22 @@ button {
     0 0 0 1px rgba(220, 184, 199, 0.5),
     0 12px 28px rgba(90, 39, 63, 0.08);
 }
+body[data-dir="rtl"] {
+  direction: rtl;
+}
+
+body[data-dir="ltr"] {
+  direction: ltr;
+}
+
+body[data-dir="rtl"] .rtl-flip-row {
+  flex-direction: row-reverse;
+}
+
+body[data-dir="rtl"] .rtl-text {
+  text-align: right;
+}
+
+body[data-dir="ltr"] .rtl-text {
+  text-align: left;
+}

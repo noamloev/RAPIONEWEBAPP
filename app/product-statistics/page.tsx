@@ -5,6 +5,7 @@ import { PageShell } from "@/components/page-shell";
 import { onlineApi } from "@/lib/api-online";
 import { localApi } from "@/lib/api-local";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { useLanguage } from "@/components/language-provider";
 
 const PIE_COLORS = [
   "#6f314d",
@@ -34,8 +35,8 @@ type MonthlyStatsResponse = {
 };
 
 type OnlineMonthlyCacheResponse =
-  | ({ found: false })
-  | ({
+  | { found: false }
+  | {
       found: true;
       year: number;
       month: number;
@@ -50,7 +51,7 @@ type OnlineMonthlyCacheResponse =
           qty: number;
         }[];
       }[];
-    });
+    };
 
 function SummaryCard({ title, value }: { title: string; value: string | number }) {
   return (
@@ -79,6 +80,8 @@ function Section({
 }
 
 export default function ProductStatisticsPage() {
+  const { t } = useLanguage();
+
   const today = new Date();
   const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
 
@@ -134,7 +137,7 @@ export default function ProductStatisticsPage() {
       setSelectedCategory(firstCategory);
     } catch (err: any) {
       const detail = err?.response?.data?.detail;
-      setError(typeof detail === "string" ? detail : err?.message || "Failed to load product statistics");
+      setError(typeof detail === "string" ? detail : err?.message || t("pages.product_stats.load_failed"));
     } finally {
       setLoading(false);
     }
@@ -167,7 +170,7 @@ export default function ProductStatisticsPage() {
   }, [categories]);
 
   return (
-    <PageShell title="Product Statistics">
+    <PageShell title={t("pages.product_stats.title")}>
       <div className="space-y-6">
         {error ? (
           <div className="rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
@@ -175,15 +178,17 @@ export default function ProductStatisticsPage() {
           </div>
         ) : null}
 
-        <Section title="Filters">
+        <Section title={t("pages.product_stats.filters")}>
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <p className="text-sm text-[var(--muted)]">
-              Choose a month, then press refresh.
+              {t("pages.product_stats.filters_desc")}
             </p>
 
             <div className="flex items-end gap-3">
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-[var(--primary-dark)]">Month</label>
+                <label className="text-sm font-medium text-[var(--primary-dark)]">
+                  {t("pages.product_stats.month")}
+                </label>
                 <input
                   type="month"
                   value={month}
@@ -197,28 +202,31 @@ export default function ProductStatisticsPage() {
                 disabled={loading}
                 className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? "Refreshing..." : "Refresh"}
+                {loading ? t("common.refreshing") : t("common.refresh")}
               </button>
             </div>
           </div>
         </Section>
 
         <div className="grid gap-4 md:grid-cols-4">
-          <SummaryCard title="Total Units Sold" value={totalQty} />
-          <SummaryCard title="Top Category" value={topCategory} />
-          <SummaryCard title="Top Product In Selected Category" value={topProduct} />
-          <SummaryCard title="Month Type" value={data?.is_final ? "Closed / Cached" : "Open / Live"} />
+          <SummaryCard title={t("pages.product_stats.total_units")} value={totalQty} />
+          <SummaryCard title={t("pages.product_stats.top_category")} value={topCategory} />
+          <SummaryCard title={t("pages.product_stats.top_product")} value={topProduct} />
+          <SummaryCard
+            title={t("pages.product_stats.month_type")}
+            value={data?.is_final ? t("pages.product_stats.closed_cached") : t("pages.product_stats.open_live")}
+          />
         </div>
 
         <div className="grid gap-6 xl:grid-cols-2">
-          <Section title="Categories Breakdown">
+          <Section title={t("pages.product_stats.breakdown")}>
             {loading ? (
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-10 text-center text-sm text-[var(--muted)]">
-                Loading chart...
+                {t("pages.product_stats.loading_chart")}
               </div>
             ) : pieData.length === 0 ? (
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-10 text-center text-sm text-[var(--muted)]">
-                No category data.
+                {t("pages.product_stats.no_category_data")}
               </div>
             ) : (
               <div className="h-[340px]">
@@ -245,15 +253,15 @@ export default function ProductStatisticsPage() {
             )}
           </Section>
 
-          <Section title="Categories Table">
+          <Section title={t("pages.product_stats.categories_table")}>
             <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
               <table className="min-w-full divide-y divide-[var(--border)]">
                 <thead className="bg-[var(--card-soft)]">
                   <tr>
-                    {["Category", "Qty", "Action"].map((col) => (
+                    {[t("table.category"), t("table.qty"), t("table.action")].map((col) => (
                       <th
                         key={col}
-                        className={`px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)] ${col === "Action" ? "text-right" : "text-left"}`}
+                        className={`px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)] ${col === t("table.action") ? "text-right" : "text-left"}`}
                       >
                         {col}
                       </th>
@@ -264,7 +272,7 @@ export default function ProductStatisticsPage() {
                   {categories.length === 0 ? (
                     <tr>
                       <td colSpan={3} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
-                        No categories found.
+                        {t("pages.product_stats.no_categories")}
                       </td>
                     </tr>
                   ) : (
@@ -280,7 +288,7 @@ export default function ProductStatisticsPage() {
                             onClick={() => setSelectedCategory(row.category_name)}
                             className="rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)]"
                           >
-                            View Products
+                            {t("pages.product_stats.view_products")}
                           </button>
                         </td>
                       </tr>
@@ -292,12 +300,12 @@ export default function ProductStatisticsPage() {
           </Section>
         </div>
 
-        <Section title="Products In Category">
+        <Section title={t("pages.product_stats.products_in_category")}>
           <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
             <table className="min-w-full divide-y divide-[var(--border)]">
               <thead className="bg-[var(--card-soft)]">
                 <tr>
-                  {["Code", "Product", "Qty"].map((col) => (
+                  {[t("table.code"), t("table.product"), t("table.qty")].map((col) => (
                     <th key={col} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">
                       {col}
                     </th>
@@ -308,7 +316,7 @@ export default function ProductStatisticsPage() {
                 {!selectedCategoryData || selectedCategoryData.items.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
-                      No products found for this category.
+                      {t("pages.product_stats.no_products_for_category")}
                     </td>
                   </tr>
                 ) : (

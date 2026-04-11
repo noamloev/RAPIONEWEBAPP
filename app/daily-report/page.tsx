@@ -6,7 +6,7 @@ import { onlineApi } from "@/lib/api-online";
 import { localApi } from "@/lib/api-local";
 import { Branch, DailyRunStatus, DailySummary, FlagRow, SaleRow } from "@/lib/types";
 import { addLocalAlert } from "@/lib/local-alerts";
-
+import { useLanguage } from "@/components/language-provider";
 
 function formatDateForApi(date: string) {
   return date;
@@ -46,6 +46,7 @@ function LuxuryInputClass() {
 }
 
 export default function DailyReportPage() {
+  const { t } = useLanguage();
   const today = new Date().toISOString().slice(0, 10);
 
   const [receiptsJobId, setReceiptsJobId] = useState("");
@@ -70,7 +71,8 @@ export default function DailyReportPage() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const branchParam = selectedBranch === "All branches" ? undefined : selectedBranch;
+  const allBranchesLabel = t("pages.daily.all_branches");
+  const branchParam = selectedBranch === allBranchesLabel ? undefined : selectedBranch;
 
   async function loadBranches() {
     const res = await onlineApi.get<Branch[]>("/branches");
@@ -132,7 +134,7 @@ export default function DailyReportPage() {
         loadRunStatuses(),
       ]);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || err?.message || "Failed to load daily report");
+      setError(err?.response?.data?.detail || err?.message || t("pages.daily.load_failed"));
     } finally {
       setLoading(false);
     }
@@ -142,68 +144,76 @@ export default function DailyReportPage() {
     refreshAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateStr, selectedBranch]);
+
   useEffect(() => {
-  if (!receiptsJobId) return;
+    if (!receiptsJobId) return;
 
-  const timer = setInterval(async () => {
-    try {
-      const res = await localApi.get("/local/check-receipts/status", {
-        params: { job_id: receiptsJobId },
-      });
-
-      const data = res.data;
-      if (!data?.ok) return;
-
-      if (data.status === "done") {
-        clearInterval(timer);
-        setCheckingReceipts(false);
-
-        const result = data.result;
-        const missingReceiptCount = result?.missing_receipt?.length ?? 0;
-        const missingInvoiceCount = result?.missing_invoice?.length ?? 0;
-        const mismatchCount = result?.mismatch?.length ?? 0;
-
-        addLocalAlert({
-          level:
-            missingReceiptCount > 0 ||
-            missingInvoiceCount > 0 ||
-            mismatchCount > 0
-              ? "warn"
-              : "success",
-          title: `Receipts check finished for ${result?.date_str ?? ""}`,
-          message:
-            `Invoices: ${result?.grand_inv ?? 0}, Receipts: ${result?.grand_rec ?? 0}, Diff: ${result?.grand_diff ?? 0}. ` +
-            `Missing receipt: ${missingReceiptCount}, Missing invoice: ${missingInvoiceCount}, Mismatch: ${mismatchCount}.`,
+    const timer = setInterval(async () => {
+      try {
+        const res = await localApi.get("/local/check-receipts/status", {
+          params: { job_id: receiptsJobId },
         });
 
-        setSuccessMessage("Receipts check finished. See alerts in the bell.");
-      }
+        const data = res.data;
+        if (!data?.ok) return;
 
-      if (data.status === "error") {
+        if (data.status === "done") {
+          clearInterval(timer);
+          setCheckingReceipts(false);
+
+          const result = data.result;
+          const missingReceiptCount = result?.missing_receipt?.length ?? 0;
+          const missingInvoiceCount = result?.missing_invoice?.length ?? 0;
+          const mismatchCount = result?.mismatch?.length ?? 0;
+
+          addLocalAlert({
+            level:
+              missingReceiptCount > 0 ||
+              missingInvoiceCount > 0 ||
+              mismatchCount > 0
+                ? "warn"
+                : "success",
+            title: t("pages.daily.receipts_finished_title").replace(
+              "{date}",
+              result?.date_str ?? ""
+            ),
+            message:
+              `${t("pages.daily.receipts_summary_invoices")}: ${result?.grand_inv ?? 0}, ` +
+              `${t("pages.daily.receipts_summary_receipts")}: ${result?.grand_rec ?? 0}, ` +
+              `${t("pages.daily.receipts_summary_diff")}: ${result?.grand_diff ?? 0}. ` +
+              `${t("pages.daily.receipts_summary_missing_receipt")}: ${missingReceiptCount}, ` +
+              `${t("pages.daily.receipts_summary_missing_invoice")}: ${missingInvoiceCount}, ` +
+              `${t("pages.daily.receipts_summary_mismatch")}: ${mismatchCount}.`,
+          });
+
+          setSuccessMessage(t("pages.daily.receipts_finished_success"));
+        }
+
+        if (data.status === "error") {
+          clearInterval(timer);
+          setCheckingReceipts(false);
+
+          addLocalAlert({
+            level: "error",
+            title: t("pages.daily.receipts_failed_title"),
+            message: data.error || t("pages.daily.receipts_failed_unknown"),
+          });
+
+          setError(data.error || t("pages.daily.receipts_failed"));
+        }
+      } catch (err: any) {
         clearInterval(timer);
         setCheckingReceipts(false);
-
-        addLocalAlert({
-          level: "error",
-          title: "Receipts check failed",
-          message: data.error || "Unknown receipts check error",
-        });
-
-        setError(data.error || "Receipts check failed");
+        setError(
+          err?.response?.data?.detail ||
+            err?.message ||
+            t("pages.daily.receipts_status_failed")
+        );
       }
-    } catch (err: any) {
-      clearInterval(timer);
-      setCheckingReceipts(false);
-      setError(
-        err?.response?.data?.detail ||
-          err?.message ||
-          "Failed to fetch receipts check status"
-      );
-    }
-  }, 1000);
+    }, 1000);
 
-  return () => clearInterval(timer);
-}, [receiptsJobId]);
+    return () => clearInterval(timer);
+  }, [receiptsJobId, t]);
 
   async function handleRunDaily() {
     try {
@@ -223,12 +233,12 @@ export default function DailyReportPage() {
       });
 
       const jobId = res.data?.job_id;
-      if (!jobId) throw new Error("No job_id returned");
+      if (!jobId) throw new Error(t("pages.daily.no_job_id"));
 
       setDailyJobId(jobId);
       setDailyJobStatus("running");
     } catch (err: any) {
-      setError(err?.response?.data?.detail || err?.message || "Failed to start daily process");
+      setError(err?.response?.data?.detail || err?.message || t("pages.daily.run_failed"));
       setRunningDaily(false);
     }
   }
@@ -251,48 +261,48 @@ export default function DailyReportPage() {
         if (data.status === "done") {
           clearInterval(timer);
           setRunningDaily(false);
-          setSuccessMessage("Daily run completed.");
+          setSuccessMessage(t("pages.daily.run_completed"));
           await refreshAll();
         }
 
         if (data.status === "error") {
           clearInterval(timer);
           setRunningDaily(false);
-          setError(data.error || "Daily run failed");
+          setError(data.error || t("pages.daily.run_failed"));
         }
       } catch (err: any) {
         clearInterval(timer);
         setRunningDaily(false);
-        setError(err?.response?.data?.detail || err?.message || "Failed to fetch daily job status");
+        setError(err?.response?.data?.detail || err?.message || t("pages.daily.status_failed"));
       }
     }, 1000);
 
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dailyJobId]);
+  }, [dailyJobId, t]);
 
   async function handleCheckReceipts() {
-  try {
-    setCheckingReceipts(true);
-    setError("");
-    setSuccessMessage("");
+    try {
+      setCheckingReceipts(true);
+      setError("");
+      setSuccessMessage("");
 
-    const res = await localApi.post("/local/check-receipts/start", null, {
-      params: {
-        date_str: formatDateForLocalReceipts(dateStr),
-      },
-    });
+      const res = await localApi.post("/local/check-receipts/start", null, {
+        params: {
+          date_str: formatDateForLocalReceipts(dateStr),
+        },
+      });
 
-    const jobId = res.data?.job_id;
-    if (!jobId) throw new Error("No receipts job_id returned");
+      const jobId = res.data?.job_id;
+      if (!jobId) throw new Error(t("pages.daily.no_receipts_job_id"));
 
-    setReceiptsJobId(jobId);
-    setSuccessMessage("Receipts check started.");
-  } catch (err: any) {
-    setCheckingReceipts(false);
-    setError(err?.response?.data?.detail || err?.message || "Failed to check receipts");
+      setReceiptsJobId(jobId);
+      setSuccessMessage(t("pages.daily.receipts_started"));
+    } catch (err: any) {
+      setCheckingReceipts(false);
+      setError(err?.response?.data?.detail || err?.message || t("pages.daily.receipts_failed"));
+    }
   }
-}
 
   const stats = useMemo(() => {
     const flagsCount = flags.length;
@@ -326,8 +336,15 @@ export default function DailyReportPage() {
     return Math.min(100, Math.round((current / total) * 100));
   }, [dailyProgressLines, dailyJobStatus]);
 
+  const statusLabel =
+    selectedDateRunStatus === "GREEN"
+      ? t("pages.daily.status_green")
+      : selectedDateRunStatus === "YELLOW"
+      ? t("pages.daily.status_yellow")
+      : selectedDateRunStatus;
+
   return (
-    <PageShell title="Daily Report">
+    <PageShell title={t("pages.daily.title")}>
       <div className="space-y-6">
         {error ? (
           <div className="rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
@@ -342,12 +359,14 @@ export default function DailyReportPage() {
         ) : null}
 
         <LuxuryCard
-          title="Filters & Actions"
-          description="Choose a date and branch, run the daily pipeline, or check receipts."
+          title={t("pages.daily.filters_actions")}
+          description={t("pages.daily.filters_actions_desc")}
         >
           <div className="grid gap-4 md:grid-cols-4">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-[var(--primary-dark)]">Date</label>
+              <label className="text-sm font-medium text-[var(--primary-dark)]">
+                {t("pages.daily.date")}
+              </label>
               <input
                 type="date"
                 value={dateStr}
@@ -357,13 +376,15 @@ export default function DailyReportPage() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-[var(--primary-dark)]">Branch</label>
+              <label className="text-sm font-medium text-[var(--primary-dark)]">
+                {t("pages.daily.branch")}
+              </label>
               <select
                 value={selectedBranch}
                 onChange={(e) => setSelectedBranch(e.target.value)}
                 className={LuxuryInputClass()}
               >
-                <option value="All branches">All branches</option>
+                <option value={allBranchesLabel}>{allBranchesLabel}</option>
                 {branches.map((branch) => (
                   <option key={branch.id} value={branch.name}>
                     {branch.name}
@@ -379,7 +400,7 @@ export default function DailyReportPage() {
                   checked={applyInventory}
                   onChange={(e) => setApplyInventory(e.target.checked)}
                 />
-                Apply inventory changes
+                {t("pages.daily.apply_inventory")}
               </label>
             </div>
 
@@ -393,7 +414,7 @@ export default function DailyReportPage() {
                     : "border-[var(--border)] bg-white text-[var(--muted-strong)]"
                 }`}
               >
-                Run Status: {selectedDateRunStatus}
+                {t("pages.daily.run_status")}: {statusLabel}
               </div>
             </div>
           </div>
@@ -404,7 +425,7 @@ export default function DailyReportPage() {
               disabled={runningDaily}
               className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {runningDaily ? "Running..." : "Run Daily"}
+              {runningDaily ? t("pages.daily.running") : t("pages.daily.run_daily")}
             </button>
 
             <button
@@ -412,7 +433,7 @@ export default function DailyReportPage() {
               disabled={checkingReceipts}
               className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {checkingReceipts ? "Checking..." : "Check Receipts"}
+              {checkingReceipts ? t("pages.daily.checking") : t("pages.daily.check_receipts")}
             </button>
 
             <button
@@ -420,21 +441,21 @@ export default function DailyReportPage() {
               disabled={loading}
               className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Refreshing..." : "Refresh"}
+              {loading ? t("common.refreshing") : t("common.refresh")}
             </button>
           </div>
         </LuxuryCard>
 
         {dailyJobId ? (
-          <LuxuryCard title="Daily Run Progress">
+          <LuxuryCard title={t("pages.daily.progress_title")}>
             <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-sm text-[var(--muted)]">
                   {dailyJobStatus === "done"
-                    ? "Completed"
+                    ? t("pages.daily.completed")
                     : dailyJobStatus === "error"
-                    ? "Failed"
-                    : "Running..."}
+                    ? t("pages.daily.failed")
+                    : t("pages.daily.running")}
                 </p>
               </div>
 
@@ -453,7 +474,7 @@ export default function DailyReportPage() {
 
             <div>
               <div className="mb-2 flex items-center justify-between text-sm text-[var(--muted-strong)]">
-                <span>Progress</span>
+                <span>{t("pages.daily.progress")}</span>
                 <span>{progressPercent}%</span>
               </div>
 
@@ -475,11 +496,11 @@ export default function DailyReportPage() {
 
         <div className="grid gap-4 md:grid-cols-5">
           {[
-            { label: "Sales Count", value: summary?.sales_count ?? "--", view: "sales" as ViewMode },
-            { label: "Revenue", value: summary?.revenue ?? "--", view: "sales" as ViewMode },
-            { label: "Flags", value: stats.flagsCount, view: "flags" as ViewMode },
-            { label: "CRIT Flags", value: stats.critCount, view: "flags" as ViewMode },
-            { label: "Run Status", value: selectedDateRunStatus, view: "runs" as ViewMode },
+            { label: t("pages.daily.sales_count"), value: summary?.sales_count ?? "--", view: "sales" as ViewMode },
+            { label: t("pages.daily.revenue"), value: summary?.revenue ?? "--", view: "sales" as ViewMode },
+            { label: t("pages.daily.flags"), value: stats.flagsCount, view: "flags" as ViewMode },
+            { label: t("pages.daily.crit_flags"), value: stats.critCount, view: "flags" as ViewMode },
+            { label: t("pages.daily.run_status"), value: statusLabel, view: "runs" as ViewMode },
           ].map((item) => (
             <button
               key={item.label}
@@ -499,13 +520,29 @@ export default function DailyReportPage() {
         </div>
 
         {selectedView === "sales" ? (
-          <LuxuryCard title="Sales" description="Loaded sales rows for the selected date.">
+          <LuxuryCard
+            title={t("pages.daily.sales_title")}
+            description={t("pages.daily.sales_desc")}
+          >
             <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
               <table className="min-w-full divide-y divide-[var(--border)]">
                 <thead className="bg-[var(--card-soft)]">
                   <tr>
-                    {["Type", "Date", "Branch", "Invoice", "Customer", "Item", "Qty", "Unit Price", "Total"].map((col) => (
-                      <th key={col} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">
+                    {[
+                      t("table.type"),
+                      t("table.date"),
+                      t("table.branch"),
+                      t("table.invoice"),
+                      t("table.customer"),
+                      t("table.item"),
+                      t("table.qty"),
+                      t("table.unit_price"),
+                      t("table.total"),
+                    ].map((col) => (
+                      <th
+                        key={col}
+                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]"
+                      >
                         {col}
                       </th>
                     ))}
@@ -515,7 +552,7 @@ export default function DailyReportPage() {
                   {sales.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
-                        No sales rows.
+                        {t("pages.daily.no_sales")}
                       </td>
                     </tr>
                   ) : (
@@ -530,7 +567,9 @@ export default function DailyReportPage() {
 
                       return (
                         <tr key={row.line_key} className={rowClass}>
-                          <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.classification || "-"}</td>
+                          <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">
+                            {row.classification || "-"}
+                          </td>
                           <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">
                             {row.doc_date ? new Date(row.doc_date).toLocaleString() : "-"}
                           </td>
@@ -552,13 +591,26 @@ export default function DailyReportPage() {
         ) : null}
 
         {selectedView === "flags" ? (
-          <LuxuryCard title="Flags" description="Warnings and critical audit flags for the selected date.">
+          <LuxuryCard
+            title={t("pages.daily.flags_title")}
+            description={t("pages.daily.flags_desc")}
+          >
             <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
               <table className="min-w-full divide-y divide-[var(--border)]">
                 <thead className="bg-[var(--card-soft)]">
                   <tr>
-                    {["Severity", "Date", "Branch", "Item", "Invoice", "Reason"].map((col) => (
-                      <th key={col} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">
+                    {[
+                      t("table.severity"),
+                      t("table.date"),
+                      t("table.branch"),
+                      t("table.item"),
+                      t("table.invoice"),
+                      t("table.reason"),
+                    ].map((col) => (
+                      <th
+                        key={col}
+                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]"
+                      >
                         {col}
                       </th>
                     ))}
@@ -568,7 +620,7 @@ export default function DailyReportPage() {
                   {flags.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
-                        No flags.
+                        {t("pages.daily.no_flags")}
                       </td>
                     </tr>
                   ) : (
@@ -601,11 +653,14 @@ export default function DailyReportPage() {
         ) : null}
 
         {selectedView === "runs" ? (
-          <LuxuryCard title="Run Statuses This Month" description="Daily run status history for the selected month.">
+          <LuxuryCard
+            title={t("pages.daily.runs_title")}
+            description={t("pages.daily.runs_desc")}
+          >
             <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-4">
               {runStatuses.length === 0 ? (
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm text-[var(--muted)]">
-                  No run statuses.
+                  {t("pages.daily.no_run_statuses")}
                 </div>
               ) : (
                 runStatuses.map((status) => (
@@ -620,7 +675,13 @@ export default function DailyReportPage() {
                     }`}
                   >
                     <div className="font-medium">{status.date}</div>
-                    <div>{status.status}</div>
+                    <div>
+                      {status.status === "GREEN"
+                        ? t("pages.daily.status_green")
+                        : status.status === "YELLOW"
+                        ? t("pages.daily.status_yellow")
+                        : status.status}
+                    </div>
                   </div>
                 ))
               )}

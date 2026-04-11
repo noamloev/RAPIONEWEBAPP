@@ -5,6 +5,7 @@ import { PageShell } from "@/components/page-shell";
 import { onlineApi } from "@/lib/api-online";
 import { localApi } from "@/lib/api-local";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { useLanguage } from "@/components/language-provider";
 
 const PIE_COLORS = [
   "#6f314d",
@@ -40,8 +41,8 @@ type WorkerMonthlyStatsResponse = {
 };
 
 type WorkerMonthlyCacheResponse =
-  | ({ found: false })
-  | ({
+  | { found: false }
+  | {
       found: true;
       year: number;
       month: number;
@@ -50,7 +51,7 @@ type WorkerMonthlyCacheResponse =
       total_qty: number;
       total_success_count: number;
       workers: WorkerMonthlyStatsResponse["workers"];
-    });
+    };
 
 function SummaryCard({ title, value }: { title: string; value: string | number }) {
   return (
@@ -79,6 +80,8 @@ function Section({
 }
 
 export default function WorkerStatisticsPage() {
+  const { t } = useLanguage();
+
   const today = new Date();
   const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
 
@@ -138,7 +141,7 @@ export default function WorkerStatisticsPage() {
       setSelectedWorker(firstWorker);
     } catch (err: any) {
       const detail = err?.response?.data?.detail;
-      setError(typeof detail === "string" ? detail : err?.message || "Failed to load worker statistics");
+      setError(typeof detail === "string" ? detail : err?.message || t("pages.worker_stats.load_failed"));
     } finally {
       setLoading(false);
     }
@@ -167,10 +170,13 @@ export default function WorkerStatisticsPage() {
     }));
   }, [workers]);
 
-  const subjectLabel = subject === "consultants" ? "Consultants" : "Leads";
+  const subjectLabel =
+    subject === "consultants"
+      ? t("pages.worker_stats.consultants")
+      : t("pages.worker_stats.leads");
 
   return (
-    <PageShell title="Worker Statistics">
+    <PageShell title={t("pages.worker_stats.title")}>
       <div className="space-y-6">
         {error ? (
           <div className="rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
@@ -178,15 +184,17 @@ export default function WorkerStatisticsPage() {
           </div>
         ) : null}
 
-        <Section title="Filters">
+        <Section title={t("pages.worker_stats.filters")}>
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <p className="text-sm text-[var(--muted)]">
-              Choose a month and whether to view consultants or leads, then press refresh.
+              {t("pages.worker_stats.filters_desc")}
             </p>
 
             <div className="flex flex-wrap items-end gap-3">
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-[var(--primary-dark)]">Month</label>
+                <label className="text-sm font-medium text-[var(--primary-dark)]">
+                  {t("pages.worker_stats.month")}
+                </label>
                 <input
                   type="month"
                   value={month}
@@ -196,14 +204,16 @@ export default function WorkerStatisticsPage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-[var(--primary-dark)]">View</label>
+                <label className="text-sm font-medium text-[var(--primary-dark)]">
+                  {t("pages.worker_stats.view")}
+                </label>
                 <select
                   value={subject}
                   onChange={(e) => setSubject(e.target.value as SubjectMode)}
                   className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
                 >
-                  <option value="consultants">Consultants</option>
-                  <option value="leads">Leads</option>
+                  <option value="consultants">{t("pages.worker_stats.consultants")}</option>
+                  <option value="leads">{t("pages.worker_stats.leads")}</option>
                 </select>
               </div>
 
@@ -212,28 +222,40 @@ export default function WorkerStatisticsPage() {
                 disabled={loading}
                 className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? "Refreshing..." : "Refresh"}
+                {loading ? t("common.refreshing") : t("common.refresh")}
               </button>
             </div>
           </div>
         </Section>
 
         <div className="grid gap-4 md:grid-cols-4">
-          <SummaryCard title={subject === "consultants" ? "Total Rows" : "Total Leads"} value={totalQty} />
-          <SummaryCard title={subject === "consultants" ? "True / Closed Count" : "Success Count"} value={totalSuccess} />
-          <SummaryCard title={subject === "consultants" ? "True %" : "Success %"} value={`${successPercent}%`} />
-          <SummaryCard title={subject === "consultants" ? "Top Consultant" : "Top Lead Worker"} value={topWorker} />
+          <SummaryCard
+            title={subject === "consultants" ? t("pages.worker_stats.total_rows") : t("pages.worker_stats.total_leads")}
+            value={totalQty}
+          />
+          <SummaryCard
+            title={subject === "consultants" ? t("pages.worker_stats.true_closed_count") : t("pages.worker_stats.success_count")}
+            value={totalSuccess}
+          />
+          <SummaryCard
+            title={subject === "consultants" ? t("pages.worker_stats.true_percent") : t("pages.worker_stats.success_percent")}
+            value={`${successPercent}%`}
+          />
+          <SummaryCard
+            title={subject === "consultants" ? t("pages.worker_stats.top_consultant") : t("pages.worker_stats.top_lead_worker")}
+            value={topWorker}
+          />
         </div>
 
         <div className="grid gap-6 xl:grid-cols-2">
-          <Section title={`${subjectLabel} Breakdown`}>
+          <Section title={`${subjectLabel} ${t("pages.worker_stats.breakdown")}`}>
             {loading ? (
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-10 text-center text-sm text-[var(--muted)]">
-                Loading chart...
+                {t("pages.worker_stats.loading_chart")}
               </div>
             ) : pieData.length === 0 ? (
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-10 text-center text-sm text-[var(--muted)]">
-                No data.
+                {t("pages.worker_stats.no_data")}
               </div>
             ) : (
               <div className="h-[340px]">
@@ -260,24 +282,30 @@ export default function WorkerStatisticsPage() {
             )}
           </Section>
 
-          <Section title={`${subjectLabel} Table`}>
+          <Section title={`${subjectLabel} ${t("pages.worker_stats.table")}`}>
             <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
               <table className="min-w-full divide-y divide-[var(--border)]">
                 <thead className="bg-[var(--card-soft)]">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">
-                      {subject === "consultants" ? "Consultant" : "Lead Worker"}
+                      {subject === "consultants" ? t("pages.worker_stats.consultant") : t("pages.worker_stats.lead_worker")}
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">Total</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">Success</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">Action</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">
+                      {t("table.total")}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">
+                      {t("table.success")}
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">
+                      {t("table.action")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border)] bg-white">
                   {workers.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
-                        No rows found.
+                        {t("pages.worker_stats.no_rows")}
                       </td>
                     </tr>
                   ) : (
@@ -294,7 +322,7 @@ export default function WorkerStatisticsPage() {
                             onClick={() => setSelectedWorker(row.worker_name)}
                             className="rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)]"
                           >
-                            View Details
+                            {t("pages.worker_stats.view_details")}
                           </button>
                         </td>
                       </tr>
@@ -306,12 +334,18 @@ export default function WorkerStatisticsPage() {
           </Section>
         </div>
 
-        <Section title={subject === "consultants" ? "True / False Breakdown" : "Status Breakdown"}>
+        <Section
+          title={
+            subject === "consultants"
+              ? t("pages.worker_stats.true_false_breakdown")
+              : t("pages.worker_stats.status_breakdown")
+          }
+        >
           <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
             <table className="min-w-full divide-y divide-[var(--border)]">
               <thead className="bg-[var(--card-soft)]">
                 <tr>
-                  {["Type", "Value", "Count"].map((col) => (
+                  {[t("table.type"), t("table.value"), t("table.count")].map((col) => (
                     <th key={col} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">
                       {col}
                     </th>
@@ -322,14 +356,16 @@ export default function WorkerStatisticsPage() {
                 {!selectedWorkerData || selectedWorkerData.items.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
-                      No details found.
+                      {t("pages.worker_stats.no_details")}
                     </td>
                   </tr>
                 ) : (
                   selectedWorkerData.items.map((row, idx) => (
                     <tr key={`${row.item_name}-${idx}`} className="hover:bg-[var(--card-soft)]">
                       <td className="px-4 py-4 text-sm font-medium text-[var(--primary-deep)]">
-                        {subject === "consultants" ? "Closed Flag" : "Lead Status"}
+                        {subject === "consultants"
+                          ? t("pages.worker_stats.closed_flag")
+                          : t("pages.worker_stats.lead_status")}
                       </td>
                       <td className="px-4 py-4 text-sm text-[var(--foreground)]">{row.item_name}</td>
                       <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.qty}</td>

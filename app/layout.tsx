@@ -1,5 +1,6 @@
 import "./globals.css";
 import AuthGuard from "@/components/auth-guard";
+import { LanguageProvider } from "@/components/language-provider";
 
 export const metadata = {
   title: "RapidOne Manager",
@@ -12,9 +13,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" dir="ltr">
       <body>
-        <AuthGuard>{children}</AuthGuard>
+        <LanguageProvider initialLanguage="en">
+          <AuthGuard>{children}</AuthGuard>
+        </LanguageProvider>
       </body>
     </html>
   );

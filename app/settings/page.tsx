@@ -6,6 +6,7 @@ import { clearAuth } from "@/lib/auth";
 import { PageShell } from "@/components/page-shell";
 import { onlineApi } from "@/lib/api-online";
 import { localApi } from "@/lib/api-local";
+import { useLanguage } from "@/components/language-provider";
 
 type SettingsPayload = {
   consultant_names: string[];
@@ -16,6 +17,7 @@ type SettingsPayload = {
   rapidone_base_url: string;
   rapidone_username: string;
   rapidone_password: string;
+  language: "en" | "he";
 };
 
 type WorkerRow = {
@@ -81,6 +83,7 @@ function Section({
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { setLanguage: applyLanguage, t } = useLanguage();
 
   const [workers, setWorkers] = useState<WorkerRow[]>([]);
   const [consultantNames, setConsultantNames] = useState<string[]>([]);
@@ -88,6 +91,7 @@ export default function SettingsPage() {
   const [statsCacheMinutes, setStatsCacheMinutes] = useState(60);
   const [saveClosedMonths, setSaveClosedMonths] = useState(true);
   const [followUpInactiveDays, setFollowUpInactiveDays] = useState(90);
+  const [language, setLanguage] = useState<"en" | "he">("en");
 
   const [rapidoneBaseUrl, setRapidoneBaseUrl] = useState("https://anuchka.rapid-image.net");
   const [rapidoneUsername, setRapidoneUsername] = useState("");
@@ -127,6 +131,8 @@ export default function SettingsPage() {
       setRapidoneBaseUrl(data.rapidone_base_url || "https://anuchka.rapid-image.net");
       setRapidoneUsername(data.rapidone_username || "");
       setRapidonePassword(data.rapidone_password || "");
+      setLanguage((data.language as "en" | "he") || "en");
+      applyLanguage((data.language as "en" | "he") || "en");
     } catch (err: any) {
       const detail = err?.response?.data?.detail;
       setError(typeof detail === "string" ? detail : err?.message || "Failed to load settings");
@@ -137,6 +143,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     loadSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function toggleName(
@@ -179,10 +186,12 @@ export default function SettingsPage() {
         rapidone_base_url: rapidoneBaseUrl,
         rapidone_username: rapidoneUsername,
         rapidone_password: rapidonePassword,
+        language,
       };
 
       await onlineApi.post("/settings", payload);
       setSuccess("Settings saved.");
+      applyLanguage(language);
       await loadSettings();
     } catch (err: any) {
       const detail = err?.response?.data?.detail;
@@ -230,7 +239,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <PageShell title="Settings">
+    <PageShell title={t("nav.settings")}>
       <div className="space-y-6">
         {error ? (
           <div className="rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
@@ -245,7 +254,7 @@ export default function SettingsPage() {
         ) : null}
 
         <Section
-          title="Statistics Staff"
+          title={t("settings.title_staff")}
           description="Sync worker names from RapidOne and choose them using a scrollable multi-select list."
           action={
             <button
@@ -253,7 +262,7 @@ export default function SettingsPage() {
               disabled={syncingWorkers}
               className="rounded-2xl border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:opacity-60"
             >
-              {syncingWorkers ? "Syncing..." : "Sync Workers From RapidOne"}
+              {syncingWorkers ? t("settings.syncing") : t("settings.sync_workers")}
             </button>
           }
         >
@@ -308,10 +317,39 @@ export default function SettingsPage() {
           </div>
         </Section>
 
-        <Section title="RapidOne Connection">
+        <Section
+          title={t("settings.title_language")}
+          description={t("settings.language_description")}
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm text-[var(--primary-dark)]">
+              <input
+                type="radio"
+                name="language"
+                checked={language === "en"}
+                onChange={() => setLanguage("en")}
+              />
+              <span>{t("common.english")}</span>
+            </label>
+
+            <label className="flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm text-[var(--primary-dark)]">
+              <input
+                type="radio"
+                name="language"
+                checked={language === "he"}
+                onChange={() => setLanguage("he")}
+              />
+              <span>{t("common.hebrew")}</span>
+            </label>
+          </div>
+        </Section>
+
+        <Section title={t("settings.title_connection")}>
           <div className="grid gap-4 md:grid-cols-3">
             <div>
-              <label className="mb-2 block text-sm font-medium text-[var(--primary-dark)]">RapidOne Base URL</label>
+              <label className="mb-2 block text-sm font-medium text-[var(--primary-dark)]">
+                RapidOne Base URL
+              </label>
               <input
                 type="text"
                 value={rapidoneBaseUrl}
@@ -321,7 +359,9 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-[var(--primary-dark)]">RapidOne Username</label>
+              <label className="mb-2 block text-sm font-medium text-[var(--primary-dark)]">
+                RapidOne Username
+              </label>
               <input
                 type="text"
                 value={rapidoneUsername}
@@ -331,7 +371,9 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-[var(--primary-dark)]">RapidOne Password</label>
+              <label className="mb-2 block text-sm font-medium text-[var(--primary-dark)]">
+                RapidOne Password
+              </label>
               <input
                 type="password"
                 value={rapidonePassword}
@@ -342,10 +384,12 @@ export default function SettingsPage() {
           </div>
         </Section>
 
-        <Section title="Cache & Follow-up">
+        <Section title={t("settings.title_cache")}>
           <div className="grid gap-6 md:grid-cols-3">
             <div>
-              <label className="mb-2 block text-sm font-medium text-[var(--primary-dark)]">Local Cache Minutes</label>
+              <label className="mb-2 block text-sm font-medium text-[var(--primary-dark)]">
+                Local Cache Minutes
+              </label>
               <input
                 type="number"
                 min={1}
@@ -372,7 +416,7 @@ export default function SettingsPage() {
                   disabled={syncingFollowUp}
                   className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:opacity-60"
                 >
-                  {syncingFollowUp ? "Syncing..." : "Sync"}
+                  {syncingFollowUp ? t("settings.syncing") : t("settings.sync")}
                 </button>
               </div>
             </div>
@@ -390,14 +434,14 @@ export default function SettingsPage() {
           </div>
         </Section>
 
-        <Section title="Session">
+        <Section title={t("settings.title_session")}>
           <div className="flex flex-wrap gap-3">
             <button
               onClick={saveSettings}
               disabled={saving || loading}
               className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:opacity-60"
             >
-              {saving ? "Saving..." : "Save Settings"}
+              {saving ? "Saving..." : t("settings.save_settings")}
             </button>
 
             <button
@@ -405,14 +449,14 @@ export default function SettingsPage() {
               disabled={saving || loading}
               className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:opacity-60"
             >
-              {loading ? "Loading..." : "Reload"}
+              {loading ? "Loading..." : t("settings.reload")}
             </button>
 
             <button
               onClick={logout}
               className="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100"
             >
-              Logout
+              {t("settings.logout")}
             </button>
           </div>
         </Section>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageShell } from "@/components/page-shell";
 import { onlineApi } from "@/lib/api-online";
+import { useLanguage } from "@/components/language-provider";
 
 type InactiveClientRow = {
   customer_name: string;
@@ -120,6 +121,8 @@ function PaginationBar({
 }
 
 export default function FollowUpPage() {
+  const { t } = useLanguage();
+
   const [data, setData] = useState<InactiveClientsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -135,11 +138,16 @@ export default function FollowUpPage() {
       setPage(1);
     } catch (err: any) {
       const detail = err?.response?.data?.detail;
-      setError(typeof detail === "string" ? detail : err?.message || "Failed to load follow-up");
+      setError(typeof detail === "string" ? detail : err?.message || t("pages.follow_up.load_failed"));
     } finally {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    refreshAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const clients = data?.clients ?? [];
 
@@ -161,7 +169,7 @@ export default function FollowUpPage() {
   }, [clients, page]);
 
   return (
-    <PageShell title="Follow-up">
+    <PageShell title={t("pages.follow_up.title")}>
       <div className="space-y-6">
         {error ? (
           <div className="rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
@@ -170,8 +178,8 @@ export default function FollowUpPage() {
         ) : null}
 
         <Section
-          title="Inactive Clients"
-          description="Clients whose last activity is older than the threshold from Settings."
+          title={t("pages.follow_up.inactive_clients")}
+          description={t("pages.follow_up.desc")}
         >
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div />
@@ -180,27 +188,35 @@ export default function FollowUpPage() {
               disabled={loading}
               className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Refreshing..." : "Refresh"}
+              {loading ? t("common.refreshing") : t("common.refresh")}
             </button>
           </div>
         </Section>
 
         <div className="grid gap-4 md:grid-cols-4">
-          <SummaryCard title="Inactive Clients" value={data?.count ?? 0} />
-          <SummaryCard title="Threshold (Days)" value={data?.days ?? "-"} />
-          <SummaryCard title="Avg Days Since Last Visit" value={avgDays} />
-          <SummaryCard title="Total Spent" value={totalSpent} />
+          <SummaryCard title={t("pages.follow_up.inactive_clients")} value={data?.count ?? 0} />
+          <SummaryCard title={t("pages.follow_up.threshold_days")} value={data?.days ?? "-"} />
+          <SummaryCard title={t("pages.follow_up.avg_days_since")} value={avgDays} />
+          <SummaryCard title={t("pages.follow_up.total_spent")} value={totalSpent} />
         </div>
 
         <Section
-          title="Clients Table"
-          description="Global inactive clients list."
+          title={t("pages.follow_up.table_title")}
+          description={t("pages.follow_up.table_desc")}
         >
           <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
             <table className="min-w-full divide-y divide-[var(--border)]">
               <thead className="bg-[var(--card-soft)]">
                 <tr>
-                  {["Name", "Mobile", "Last Visit", "Days Since Last", "Visits", "Total Spent", "Last Branch"].map((col) => (
+                  {[
+                    t("table.name"),
+                    t("table.mobile"),
+                    t("table.last_visit"),
+                    t("table.days_since_last"),
+                    t("table.visits"),
+                    t("table.total_spent"),
+                    t("table.last_branch"),
+                  ].map((col) => (
                     <th
                       key={col}
                       className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]"
@@ -215,7 +231,7 @@ export default function FollowUpPage() {
                 {clients.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
-                      No inactive clients found.
+                      {t("pages.follow_up.no_clients")}
                     </td>
                   </tr>
                 ) : (

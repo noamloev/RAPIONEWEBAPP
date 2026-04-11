@@ -3,6 +3,7 @@
 import { ReactNode } from "react";
 import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
+import { useLanguage } from "@/components/language-provider";
 
 export function PageShell({
   title,
@@ -11,9 +12,11 @@ export function PageShell({
   title: string;
   children: ReactNode;
 }) {
+  const { dir, t } = useLanguage();
+
   return (
     <div className="min-h-screen bg-transparent">
-      <div className="flex min-h-screen">
+      <div className={`flex min-h-screen ${dir === "rtl" ? "flex-row-reverse" : ""}`}>
         <AppSidebar />
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -25,32 +28,32 @@ export function PageShell({
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                   <div>
                     <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--primary)]">
-                      Workspace
+                      {t("shell.workspace")}
                     </div>
                     <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[var(--primary-deep)] sm:text-4xl">
                       {title}
                     </h1>
                     <p className="mt-2 max-w-2xl text-sm text-[var(--muted)] sm:text-base">
-                      Manage inventory, reporting, statistics, and operational workflows in one polished control panel.
+                      {t("shell.manage_text")}
                     </p>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-2xl border border-[var(--border)] bg-white/80 px-4 py-3 shadow-sm">
                       <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-                        Theme
+                        {t("shell.theme")}
                       </p>
                       <p className="mt-1 text-sm font-medium text-[var(--primary-dark)]">
-                        Luxury Rose
+                        {t("shell.luxury_rose")}
                       </p>
                     </div>
 
                     <div className="rounded-2xl border border-[var(--border)] bg-white/80 px-4 py-3 shadow-sm">
                       <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-                        Status
+                        {t("shell.status")}
                       </p>
                       <p className="mt-1 text-sm font-medium text-[var(--primary-dark)]">
-                        Ready
+                        {t("shell.ready")}
                       </p>
                     </div>
                   </div>

@@ -13,21 +13,23 @@ import {
   PhoneIcon,
   PersonStandingIcon,
 } from "lucide-react";
+import { useLanguage } from "@/components/language-provider";
 
 const items = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/clients", label: "Clients", icon: PersonStandingIcon },
-  { href: "/products", label: "Products", icon: Package },
-  { href: "/inventory", label: "Inventory", icon: Boxes },
-  { href: "/daily-report", label: "Daily Report", icon: FileBarChart2 },
-  { href: "/follow-up", label: "Follow Up", icon: PhoneIcon },
-  { href: "/product-statistics", label: "Product Statistics", icon: PieChart },
-  { href: "/worker-statistics", label: "Worker Statistics", icon: Users },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/", labelKey: "nav.dashboard", icon: LayoutDashboard },
+  { href: "/clients", labelKey: "nav.clients", icon: PersonStandingIcon },
+  { href: "/products", labelKey: "nav.products", icon: Package },
+  { href: "/inventory", labelKey: "nav.inventory", icon: Boxes },
+  { href: "/daily-report", labelKey: "nav.daily_report", icon: FileBarChart2 },
+  { href: "/follow-up", labelKey: "nav.follow_up", icon: PhoneIcon },
+  { href: "/product-statistics", labelKey: "nav.product_statistics", icon: PieChart },
+  { href: "/worker-statistics", labelKey: "nav.worker_statistics", icon: Users },
+  { href: "/settings", labelKey: "nav.settings", icon: Settings },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   return (
     <aside className="hidden w-[290px] shrink-0 border-r border-[var(--border)] bg-white/72 backdrop-blur-xl lg:block">
@@ -75,7 +77,7 @@ export function AppSidebar() {
                     <Icon className="h-4 w-4" />
                   </span>
 
-                  <span>{item.label}</span>
+                  <span>{t(item.labelKey)}</span>
                 </Link>
               </li>
             );

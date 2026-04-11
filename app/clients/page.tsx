@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { PageShell } from "@/components/page-shell";
 import { onlineApi } from "@/lib/api-online";
 import { localApi } from "@/lib/api-local";
+import { useLanguage } from "@/components/language-provider";
 
 const CLIENT_IMPORT_JOB_KEY = "rapidone_clients_import_job_id";
 const PAGE_SIZE = 20;
@@ -138,6 +139,8 @@ function PaginationBar({
 }
 
 export default function ClientsPage() {
+  const { t } = useLanguage();
+
   const [search, setSearch] = useState("");
   const [data, setData] = useState<ClientsResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -163,7 +166,7 @@ export default function ClientsPage() {
       setPage(1);
     } catch (err: any) {
       const detail = err?.response?.data?.detail;
-      setError(typeof detail === "string" ? detail : err?.message || "Failed to load clients");
+      setError(typeof detail === "string" ? detail : err?.message || t("pages.clients.load_failed"));
     } finally {
       setLoading(false);
     }
@@ -171,6 +174,7 @@ export default function ClientsPage() {
 
   useEffect(() => {
     loadClients();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -199,7 +203,7 @@ export default function ClientsPage() {
       const jobId = res.data?.job_id;
 
       if (!jobId) {
-        throw new Error("No job_id returned");
+        throw new Error(t("pages.clients.no_job_id"));
       }
 
       setImportJobId(jobId);
@@ -210,7 +214,7 @@ export default function ClientsPage() {
     } catch (err: any) {
       setImporting(false);
       const detail = err?.response?.data?.detail;
-      setError(typeof detail === "string" ? detail : err?.message || "Failed to start client import");
+      setError(typeof detail === "string" ? detail : err?.message || t("pages.clients.import_start_failed"));
     }
   }
 
@@ -235,7 +239,11 @@ export default function ClientsPage() {
           }
 
           setSuccess(
-            `Import finished. Scraped: ${payload.result?.count ?? 0}, Created: ${payload.result?.created ?? 0}, Updated: ${payload.result?.updated ?? 0}, Skipped: ${payload.result?.skipped ?? 0}.`
+            t("pages.clients.import_finished")
+              .replace("{count}", String(payload.result?.count ?? 0))
+              .replace("{created}", String(payload.result?.created ?? 0))
+              .replace("{updated}", String(payload.result?.updated ?? 0))
+              .replace("{skipped}", String(payload.result?.skipped ?? 0))
           );
 
           await loadClients(search.trim());
@@ -249,19 +257,19 @@ export default function ClientsPage() {
             localStorage.removeItem(CLIENT_IMPORT_JOB_KEY);
           }
 
-          setError(payload.error || "Client import failed");
+          setError(payload.error || t("pages.clients.import_failed"));
         }
       } catch (err: any) {
         clearInterval(timer);
         setImporting(false);
 
         const detail = err?.response?.data?.detail;
-        setError(typeof detail === "string" ? detail : err?.message || "Failed to fetch import status");
+        setError(typeof detail === "string" ? detail : err?.message || t("pages.clients.import_status_failed"));
       }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [importJobId, search]);
+  }, [importJobId, search, t]);
 
   const clients = data?.clients ?? [];
 
@@ -286,7 +294,7 @@ export default function ClientsPage() {
   }, [clients, page]);
 
   return (
-    <PageShell title="Clients">
+    <PageShell title={t("pages.clients.title")}>
       <div className="space-y-6">
         {error ? (
           <div className="rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
@@ -301,8 +309,8 @@ export default function ClientsPage() {
         ) : null}
 
         <Section
-          title="Clients"
-          description="Search clients, view core details, and import the latest active client list."
+          title={t("pages.clients.title")}
+          description={t("pages.clients.desc")}
         >
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div />
@@ -310,7 +318,7 @@ export default function ClientsPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by name or phone"
+                placeholder={t("pages.clients.search_placeholder")}
                 className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
               />
 
@@ -319,7 +327,7 @@ export default function ClientsPage() {
                 disabled={loading}
                 className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:opacity-60"
               >
-                {loading ? "Searching..." : "Search"}
+                {loading ? t("pages.clients.searching") : t("common.search")}
               </button>
 
               <button
@@ -327,27 +335,27 @@ export default function ClientsPage() {
                 disabled={importing}
                 className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:opacity-60"
               >
-                {importing ? "Running Import..." : "Import Active Clients"}
+                {importing ? t("pages.clients.running_import") : t("pages.clients.import_active")}
               </button>
             </div>
           </div>
         </Section>
 
         <div className="grid gap-4 md:grid-cols-5">
-          <SummaryCard title="Clients In DB" value={data?.count ?? 0} />
-          <SummaryCard title="Scraped Count" value={importStatus?.scraped_count ?? 0} />
-          <SummaryCard title="Current Page" value={importStatus?.current_page ?? 0} />
-          <SummaryCard title="Uploading Page" value={importStatus?.uploading_page ?? 0} />
+          <SummaryCard title={t("pages.clients.clients_in_db")} value={data?.count ?? 0} />
+          <SummaryCard title={t("pages.clients.scraped_count")} value={importStatus?.scraped_count ?? 0} />
+          <SummaryCard title={t("pages.clients.current_page")} value={importStatus?.current_page ?? 0} />
+          <SummaryCard title={t("pages.clients.uploading_page")} value={importStatus?.uploading_page ?? 0} />
           <SummaryCard
-            title="Created / Updated"
+            title={t("pages.clients.created_updated")}
             value={`${importStatus?.created ?? 0} / ${importStatus?.updated ?? 0}`}
           />
         </div>
 
         {importJobId ? (
           <Section
-            title="Import Progress"
-            description="Scraping pages and uploading to the database in the background."
+            title={t("pages.clients.import_progress")}
+            description={t("pages.clients.import_progress_desc")}
           >
             <div className="mb-4 flex items-center justify-between gap-4">
               <div />
@@ -366,7 +374,7 @@ export default function ClientsPage() {
 
             <div className="mb-4">
               <div className="mb-2 flex items-center justify-between text-sm text-[var(--muted-strong)]">
-                <span>Progress</span>
+                <span>{t("pages.daily.progress")}</span>
                 <span>{importStatus?.status === "done" ? "100%" : `${importPercent}%`}</span>
               </div>
 
@@ -393,7 +401,7 @@ export default function ClientsPage() {
               <div className="max-h-80 overflow-y-auto bg-[var(--card-soft)] px-4 py-3">
                 <div className="space-y-2 text-sm text-[var(--foreground)]">
                   {(importStatus?.progress_lines ?? []).length === 0 ? (
-                    <div>No progress yet.</div>
+                    <div>{t("pages.clients.no_progress")}</div>
                   ) : (
                     importStatus?.progress_lines.map((line, idx) => (
                       <div key={idx}>{line}</div>
@@ -406,14 +414,21 @@ export default function ClientsPage() {
         ) : null}
 
         <Section
-          title="Clients Table"
-          description="Main client details from the database."
+          title={t("pages.clients.table_title")}
+          description={t("pages.clients.table_desc")}
         >
           <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
             <table className="min-w-full divide-y divide-[var(--border)]">
               <thead className="bg-[var(--card-soft)]">
                 <tr>
-                  {["Full Name", "Phone", "Branch", "Status", "Last Payment / Activity", "Total Amount"].map((col) => (
+                  {[
+                    t("table.full_name"),
+                    t("table.phone"),
+                    t("table.branch"),
+                    t("table.status"),
+                    t("table.last_payment_activity"),
+                    t("table.total_amount"),
+                  ].map((col) => (
                     <th
                       key={col}
                       className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]"
@@ -428,7 +443,7 @@ export default function ClientsPage() {
                 {clients.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
-                      No clients found.
+                      {t("pages.clients.no_clients")}
                     </td>
                   </tr>
                 ) : (

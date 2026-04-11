@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { PageShell } from "@/components/page-shell";
 import { onlineApi } from "@/lib/api-online";
 import { Product } from "@/lib/types";
+import { useLanguage } from "@/components/language-provider";
 
 type ProductCreatePayload = {
   item_code: string;
@@ -14,6 +15,8 @@ type ProductCreatePayload = {
 };
 
 export default function ProductsPage() {
+  const { t } = useLanguage();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -32,7 +35,11 @@ export default function ProductsPage() {
       const res = await onlineApi.get<Product[]>("/products");
       setProducts(res.data ?? []);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || err?.message || "Failed to load products");
+      setError(
+        err?.response?.data?.detail ||
+          err?.message ||
+          t("pages.products.load_failed")
+      );
     } finally {
       setLoading(false);
     }
@@ -40,13 +47,14 @@ export default function ProductsPage() {
 
   useEffect(() => {
     loadProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleAddProduct(e: React.FormEvent) {
     e.preventDefault();
 
     if (!itemCode.trim() || !itemName.trim()) {
-      setError("Item code and item name are required.");
+      setError(t("pages.products.required_fields"));
       return;
     }
 
@@ -69,22 +77,37 @@ export default function ProductsPage() {
       setBasePrice("");
       await loadProducts();
     } catch (err: any) {
-      setError(err?.response?.data?.detail || err?.message || "Failed to add product");
+      setError(
+        err?.response?.data?.detail ||
+          err?.message ||
+          t("pages.products.add_failed")
+      );
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDeleteProduct(itemNameToDelete: string) {
-    const ok = window.confirm(`Deactivate "${itemNameToDelete}"?`);
+    const ok = window.confirm(
+      t("pages.products.deactivate_confirm").replace(
+        "{name}",
+        itemNameToDelete
+      )
+    );
     if (!ok) return;
 
     try {
       setError("");
-      await onlineApi.delete(`/products/by-name/${encodeURIComponent(itemNameToDelete)}`);
+      await onlineApi.delete(
+        `/products/by-name/${encodeURIComponent(itemNameToDelete)}`
+      );
       await loadProducts();
     } catch (err: any) {
-      setError(err?.response?.data?.detail || err?.message || "Failed to delete product");
+      setError(
+        err?.response?.data?.detail ||
+          err?.message ||
+          t("pages.products.delete_failed")
+      );
     }
   }
 
@@ -102,39 +125,47 @@ export default function ProductsPage() {
   }, [products, search]);
 
   return (
-    <PageShell title="Products">
+    <PageShell title={t("pages.products.title")}>
       <div className="space-y-6">
         <section className="rounded-[30px] border border-[var(--border)] bg-white/88 p-6 shadow-[var(--shadow-card)]">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-[var(--primary-deep)]">Add Product</h3>
+            <h3 className="text-lg font-semibold text-[var(--primary-deep)]">
+              {t("pages.products.add_product")}
+            </h3>
             <p className="text-sm text-[var(--muted)]">
-              Add a new product to the company catalog.
+              {t("pages.products.add_product_desc")}
             </p>
           </div>
 
           <form onSubmit={handleAddProduct} className="grid gap-4 md:grid-cols-4">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-[var(--primary-dark)]">Item Code</label>
+              <label className="text-sm font-medium text-[var(--primary-dark)]">
+                {t("pages.products.item_code")}
+              </label>
               <input
                 value={itemCode}
                 onChange={(e) => setItemCode(e.target.value)}
                 className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
-                placeholder="e.g. HALLURA-1"
+                placeholder={t("pages.products.item_code_placeholder")}
               />
             </div>
 
             <div className="flex flex-col gap-2 md:col-span-2">
-              <label className="text-sm font-medium text-[var(--primary-dark)]">Item Name</label>
+              <label className="text-sm font-medium text-[var(--primary-dark)]">
+                {t("pages.products.item_name")}
+              </label>
               <input
                 value={itemName}
                 onChange={(e) => setItemName(e.target.value)}
                 className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
-                placeholder="Product name"
+                placeholder={t("pages.products.item_name_placeholder")}
               />
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-[var(--primary-dark)]">Base Price</label>
+              <label className="text-sm font-medium text-[var(--primary-dark)]">
+                {t("pages.products.base_price")}
+              </label>
               <input
                 value={basePrice}
                 onChange={(e) => setBasePrice(e.target.value)}
@@ -146,13 +177,15 @@ export default function ProductsPage() {
               />
             </div>
 
-            <div className="md:col-span-4 flex justify-end">
+            <div className="flex justify-end md:col-span-4">
               <button
                 type="submit"
                 disabled={saving}
                 className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {saving ? "Adding..." : "Add Product"}
+                {saving
+                  ? t("pages.products.adding")
+                  : t("pages.products.add_product")}
               </button>
             </div>
           </form>
@@ -161,9 +194,11 @@ export default function ProductsPage() {
         <section className="rounded-[30px] border border-[var(--border)] bg-white/88 p-6 shadow-[var(--shadow-card)]">
           <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-[var(--primary-deep)]">Products List</h3>
+              <h3 className="text-lg font-semibold text-[var(--primary-deep)]">
+                {t("pages.products.list_title")}
+              </h3>
               <p className="text-sm text-[var(--muted)]">
-                Browse, search, and manage active products.
+                {t("pages.products.list_desc")}
               </p>
             </div>
 
@@ -172,7 +207,7 @@ export default function ProductsPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-72 rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
-                placeholder="Search by code, name, barcode..."
+                placeholder={t("pages.products.search_placeholder")}
               />
 
               <button
@@ -180,7 +215,7 @@ export default function ProductsPage() {
                 disabled={loading}
                 className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? "Refreshing..." : "Refresh"}
+                {loading ? t("common.refreshing") : t("common.refresh")}
               </button>
             </div>
           </div>
@@ -195,10 +230,19 @@ export default function ProductsPage() {
             <table className="min-w-full divide-y divide-[var(--border)]">
               <thead className="bg-[var(--card-soft)]">
                 <tr>
-                  {["Code", "Name", "Barcode", "Base Price", "Currency", "Actions"].map((col) => (
+                  {[
+                    t("table.code"),
+                    t("table.name"),
+                    t("table.barcode"),
+                    t("table.base_price"),
+                    t("table.currency"),
+                    t("table.actions"),
+                  ].map((col) => (
                     <th
                       key={col}
-                      className={`px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)] ${col === "Actions" ? "text-right" : "text-left"}`}
+                      className={`px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)] ${
+                        col === t("table.actions") ? "text-right" : "text-left"
+                      }`}
                     >
                       {col}
                     </th>
@@ -210,13 +254,13 @@ export default function ProductsPage() {
                 {loading ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-10 text-center text-sm text-[var(--muted)]">
-                      Loading products...
+                      {t("pages.products.loading")}
                     </td>
                   </tr>
                 ) : filteredProducts.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-10 text-center text-sm text-[var(--muted)]">
-                      No products found.
+                      {t("pages.products.empty")}
                     </td>
                   </tr>
                 ) : (
@@ -242,7 +286,7 @@ export default function ProductsPage() {
                           onClick={() => handleDeleteProduct(product.item_name)}
                           className="rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)]"
                         >
-                          Deactivate
+                          {t("pages.products.deactivate")}
                         </button>
                       </td>
                     </tr>

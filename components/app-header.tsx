@@ -3,11 +3,13 @@
 import { Bell, Search, Sparkles, Download } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getLocalAlerts, markLocalAlertRead, type LocalAlert } from "@/lib/local-alerts";
+import { useLanguage } from "@/components/language-provider";
 
 export function AppHeader({ title }: { title: string }) {
   const [localStatus, setLocalStatus] = useState<"checking" | "online" | "offline">("checking");
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [alerts, setAlerts] = useState<LocalAlert[]>([]);
+  const { t, dir } = useLanguage();
 
   async function checkLocalServer() {
     try {
@@ -54,7 +56,11 @@ export function AppHeader({ title }: { title: string }) {
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-white/70 backdrop-blur-xl">
-      <div className="flex min-h-[78px] items-center justify-between gap-4 px-6 lg:px-8">
+      <div
+        className={`flex min-h-[78px] items-center justify-between gap-4 px-6 lg:px-8 ${
+          dir === "rtl" ? "flex-row-reverse" : ""
+        }`}
+      >
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-[var(--primary)]">
             <Sparkles className="h-3.5 w-3.5" />
@@ -77,12 +83,12 @@ export function AppHeader({ title }: { title: string }) {
 
         <div className="flex items-center gap-3">
           <div className="hidden rounded-full border border-[var(--border)] bg-[var(--card-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-dark)] md:block">
-            Company ID: 1
+            {t("header.company_id")}: 1
           </div>
 
           {localStatus === "online" ? (
             <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
-              🟢 Local Agent Connected
+              🟢 {t("header.connected")}
             </div>
           ) : localStatus === "offline" ? (
             <button
@@ -90,11 +96,11 @@ export function AppHeader({ title }: { title: string }) {
               className="flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
             >
               <Download className="h-4 w-4" />
-              Download Local Agent
+              {t("header.download_agent")}
             </button>
           ) : (
             <div className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm">
-              Checking...
+              {t("header.checking")}
             </div>
           )}
 
@@ -114,14 +120,16 @@ export function AppHeader({ title }: { title: string }) {
             {alertsOpen ? (
               <div className="absolute right-0 top-14 z-50 w-[380px] rounded-3xl border border-rose-200 bg-white p-4 shadow-2xl">
                 <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-rose-950">Alerts</h3>
-                  <span className="text-xs text-rose-500">{unreadCount} unread</span>
+                  <h3 className="text-sm font-semibold text-rose-950">{t("header.alerts")}</h3>
+                  <span className="text-xs text-rose-500">
+                    {unreadCount} {t("header.unread")}
+                  </span>
                 </div>
 
                 <div className="max-h-[380px] space-y-3 overflow-y-auto">
                   {alerts.length === 0 ? (
                     <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-4 text-sm text-rose-600">
-                      No alerts.
+                      {t("header.no_alerts")}
                     </div>
                   ) : (
                     alerts.map((alert) => (

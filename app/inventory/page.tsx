@@ -12,6 +12,7 @@ import {
   TextInput,
 } from "@/components/ui-kit";
 import { onlineApi } from "@/lib/api-online";
+import { useLanguage } from "@/components/language-provider";
 
 type Branch = { id: number; name: string };
 
@@ -43,6 +44,8 @@ type InventoryHistoryRow = {
 };
 
 export default function InventoryPage() {
+  const { t } = useLanguage();
+
   const [branches, setBranches] = useState<Branch[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedBranch, setSelectedBranch] = useState("");
@@ -101,7 +104,7 @@ export default function InventoryPage() {
       await loadInventory(branchName);
     } catch (err: any) {
       setError(
-        err?.response?.data?.detail || err?.message || "Failed to load inventory"
+        err?.response?.data?.detail || err?.message || t("pages.inventory.load_failed")
       );
     } finally {
       setLoading(false);
@@ -110,12 +113,14 @@ export default function InventoryPage() {
 
   useEffect(() => {
     refreshAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (selectedBranch) {
       loadInventory(selectedBranch).catch(() => {});
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBranch]);
 
   async function setInventoryWithWarehouse() {
@@ -130,14 +135,14 @@ export default function InventoryPage() {
         qty: Number(setQty || 0),
       });
 
-      setSuccess("Inventory updated with warehouse adjustment.");
+      setSuccess(t("pages.inventory.success_with_warehouse"));
       setSetQty("");
       await loadInventory();
     } catch (err: any) {
       setError(
         err?.response?.data?.detail ||
           err?.message ||
-          "Failed to update inventory with warehouse"
+          t("pages.inventory.save_with_warehouse_failed")
       );
     } finally {
       setSavingWarehouse(false);
@@ -156,14 +161,14 @@ export default function InventoryPage() {
         qty: Number(setQty || 0),
       });
 
-      setSuccess("Inventory updated without warehouse adjustment.");
+      setSuccess(t("pages.inventory.success_branch_only"));
       setSetQty("");
       await loadInventory();
     } catch (err: any) {
       setError(
         err?.response?.data?.detail ||
           err?.message ||
-          "Failed to update branch inventory"
+          t("pages.inventory.save_branch_only_failed")
       );
     } finally {
       setSavingBranchOnly(false);
@@ -186,7 +191,7 @@ export default function InventoryPage() {
       );
 
       if (!latestForBranch) {
-        setError("No undoable inventory change found for this branch.");
+        setError(t("pages.inventory.no_undoable_change"));
         return;
       }
 
@@ -202,7 +207,7 @@ export default function InventoryPage() {
       setError(
         err?.response?.data?.detail ||
           err?.message ||
-          "Failed to prepare undo preview"
+          t("pages.inventory.undo_preview_failed")
       );
     }
   }
@@ -219,7 +224,7 @@ export default function InventoryPage() {
         action_group_id: undoPreviewActionGroupId,
       });
 
-      setSuccess("Last inventory change was undone.");
+      setSuccess(t("pages.inventory.undo_success"));
       setUndoModalOpen(false);
       setUndoPreviewRows(null);
       setUndoPreviewActionGroupId(null);
@@ -228,7 +233,7 @@ export default function InventoryPage() {
       setError(
         err?.response?.data?.detail ||
           err?.message ||
-          "Failed to undo last inventory change"
+          t("pages.inventory.undo_failed")
       );
     } finally {
       setUndoing(false);
@@ -245,7 +250,7 @@ export default function InventoryPage() {
   const undoRowsSorted = useMemo(() => undoPreviewRows ?? [], [undoPreviewRows]);
 
   return (
-    <PageShell title="Inventory">
+    <PageShell title={t("pages.inventory.title")}>
       <div className="space-y-6">
         {error ? (
           <div className="rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
@@ -260,18 +265,27 @@ export default function InventoryPage() {
         ) : null}
 
         <div className="grid gap-4 md:grid-cols-4">
-          <SummaryCard title="Rows Loaded" value={rows.length} />
-          <SummaryCard title="Selected Branch" value={selectedBranch || "-"} />
-          <SummaryCard title="Status" value={loading ? "Loading" : "Ready"} />
+          <SummaryCard title={t("pages.inventory.rows_loaded")} value={rows.length} />
+          <SummaryCard title={t("pages.inventory.selected_branch")} value={selectedBranch || "-"} />
           <SummaryCard
-            title="Undo State"
-            value={undoing ? "Undoing..." : undoModalOpen ? "Confirming" : "Available"}
+            title={t("pages.inventory.status")}
+            value={loading ? t("common.loading") : t("shell.ready")}
+          />
+          <SummaryCard
+            title={t("pages.inventory.undo_state")}
+            value={
+              undoing
+                ? t("pages.inventory.undoing")
+                : undoModalOpen
+                ? t("pages.inventory.confirming")
+                : t("pages.inventory.available")
+            }
           />
         </div>
 
         <SectionCard
-          title="Branch View"
-          description="Switch branch, refresh data, or undo the latest inventory action for this branch."
+          title={t("pages.inventory.branch_view")}
+          description={t("pages.inventory.branch_view_desc")}
         >
           <div className="flex flex-wrap gap-3">
             <div className="min-w-[260px]">
@@ -288,7 +302,7 @@ export default function InventoryPage() {
             </div>
 
             <SecondaryButton onClick={() => refreshAll(selectedBranch)} disabled={loading}>
-              Refresh
+              {t("common.refresh")}
             </SecondaryButton>
 
             <SecondaryButton
@@ -296,21 +310,21 @@ export default function InventoryPage() {
               disabled={!selectedBranch || undoing}
               className="border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
             >
-              {undoing ? "Undoing..." : "Undo Last Change"}
+              {undoing ? t("pages.inventory.undoing") : t("pages.inventory.undo_last_change")}
             </SecondaryButton>
           </div>
         </SectionCard>
 
         <SectionCard
-          title="Set Inventory"
-          description="Choose whether the branch quantity should reduce the warehouse or change only the branch."
+          title={t("pages.inventory.set_inventory")}
+          description={t("pages.inventory.set_inventory_desc")}
         >
           <div className="grid gap-4 md:grid-cols-4">
             <SelectInput
               value={setProductCode}
               onChange={(e) => setSetProductCode(e.target.value)}
             >
-              <option value="">Select product</option>
+              <option value="">{t("pages.inventory.select_product")}</option>
               {products.map((p) => (
                 <option key={p.item_code} value={p.item_code}>
                   {p.item_name} ({p.item_code})
@@ -319,7 +333,7 @@ export default function InventoryPage() {
             </SelectInput>
 
             <TextInput
-              placeholder="Quantity"
+              placeholder={t("pages.inventory.quantity")}
               type="number"
               value={setQty}
               onChange={(e) => setSetQty(e.target.value)}
@@ -332,7 +346,9 @@ export default function InventoryPage() {
                   savingWarehouse || savingBranchOnly || !selectedBranch || !setProductCode
                 }
               >
-                {savingWarehouse ? "Saving..." : "Set With Warehouse"}
+                {savingWarehouse
+                  ? t("pages.inventory.saving")
+                  : t("pages.inventory.set_with_warehouse")}
               </PrimaryButton>
 
               <SecondaryButton
@@ -341,21 +357,29 @@ export default function InventoryPage() {
                   savingWarehouse || savingBranchOnly || !selectedBranch || !setProductCode
                 }
               >
-                {savingBranchOnly ? "Saving..." : "Set Branch Only"}
+                {savingBranchOnly
+                  ? t("pages.inventory.saving")
+                  : t("pages.inventory.set_branch_only")}
               </SecondaryButton>
             </div>
           </div>
         </SectionCard>
 
         <SectionCard
-          title="Inventory Table"
-          description="Live inventory values for the selected branch."
+          title={t("pages.inventory.table_title")}
+          description={t("pages.inventory.table_desc")}
         >
-          <DataTable columns={["Code", "Product", "Qty"]}>
+          <DataTable
+            columns={[
+              t("table.code"),
+              t("table.product"),
+              t("table.qty"),
+            ]}
+          >
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={3} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
-                  No inventory rows found.
+                  {t("pages.inventory.empty")}
                 </td>
               </tr>
             ) : (
@@ -384,10 +408,10 @@ export default function InventoryPage() {
             <div className="w-full max-w-3xl rounded-3xl border border-rose-200 bg-white p-6 shadow-2xl">
               <div className="mb-4">
                 <h2 className="text-xl font-semibold text-rose-950">
-                  Confirm Undo
+                  {t("pages.inventory.confirm_undo")}
                 </h2>
                 <p className="mt-1 text-sm text-rose-500">
-                  These changes will be reverted back to their previous quantities. Are you sure?
+                  {t("pages.inventory.confirm_undo_desc")}
                 </p>
               </div>
 
@@ -396,19 +420,19 @@ export default function InventoryPage() {
                   <thead className="bg-rose-50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">
-                        Branch
+                        {t("table.branch")}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">
-                        Product
+                        {t("table.product")}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">
-                        Change Type
+                        {t("table.change_type")}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">
-                        Current Qty
+                        {t("table.current_qty")}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">
-                        Will Revert To
+                        {t("table.will_revert_to")}
                       </th>
                     </tr>
                   </thead>
@@ -438,11 +462,11 @@ export default function InventoryPage() {
 
               <div className="mt-5 flex flex-wrap justify-end gap-3">
                 <SecondaryButton onClick={closeUndoModal} disabled={undoing}>
-                  Cancel
+                  {t("common.cancel")}
                 </SecondaryButton>
 
                 <PrimaryButton onClick={confirmUndo} disabled={undoing}>
-                  {undoing ? "Undoing..." : "Yes, Undo Changes"}
+                  {undoing ? t("pages.inventory.undoing") : t("pages.inventory.yes_undo_changes")}
                 </PrimaryButton>
               </div>
             </div>
