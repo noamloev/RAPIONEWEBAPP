@@ -2,13 +2,22 @@
 
 import { Bell, Search, Sparkles, Download } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { getLocalAlerts, markLocalAlertRead, type LocalAlert } from "@/lib/local-alerts";
+import { onlineApi } from "@/lib/api-online";
 import { useLanguage } from "@/components/language-provider";
+
+type ServerAlert = {
+  id: number;
+  level: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string | null;
+};
 
 export function AppHeader({ title }: { title: string }) {
   const [localStatus, setLocalStatus] = useState<"checking" | "online" | "offline">("checking");
   const [alertsOpen, setAlertsOpen] = useState(false);
-  const [alerts, setAlerts] = useState<LocalAlert[]>([]);
+  const [alerts, setAlerts] = useState<ServerAlert[]>([]);
   const { t, dir } = useLanguage();
 
   async function checkLocalServer() {
@@ -24,22 +33,34 @@ export function AppHeader({ title }: { title: string }) {
     }
   }
 
-  function loadAlerts() {
-    setAlerts(getLocalAlerts());
+  async function loadAlerts() {
+    try {
+      const res = await onlineApi.get<ServerAlert[]>("/alerts");
+      setAlerts(res.data || []);
+    } catch {
+      setAlerts([]);
+    }
+  }
+
+  async function markRead(id: number) {
+    try {
+      await onlineApi.post(`/alerts/${id}/read`);
+      await loadAlerts();
+    } catch (err) {
+      console.error("Failed to mark alert as read", err);
+    }
   }
 
   useEffect(() => {
     checkLocalServer();
     loadAlerts();
 
-    const interval = setInterval(checkLocalServer, 5000);
-    const onAlertsChanged = () => loadAlerts();
+    const interval = setInterval(() => {
+      checkLocalServer();
+      loadAlerts();
+    }, 5000);
 
-    window.addEventListener("rapidone-alerts-changed", onAlertsChanged);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("rapidone-alerts-changed", onAlertsChanged);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   function downloadLocalServer() {
@@ -150,13 +171,15 @@ export function AppHeader({ title }: { title: string }) {
                               {alert.message}
                             </div>
                             <div className="mt-2 text-xs text-rose-400">
-                              {new Date(alert.created_at).toLocaleString()}
+                              {alert.created_at
+                                ? new Date(alert.created_at).toLocaleString()
+                                : "-"}
                             </div>
                           </div>
 
                           {!alert.is_read ? (
                             <button
-                              onClick={() => markLocalAlertRead(alert.id)}
+                              onClick={() => markRead(alert.id)}
                               className="rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50"
                             >
                               Mark read
