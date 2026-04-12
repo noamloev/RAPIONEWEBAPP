@@ -65,7 +65,7 @@ export function AppHeader({ title }: { title: string }) {
 
   function downloadLocalServer() {
     window.open(
-      "https://github.com/noamloev/ANUCHKA-RELEASES/releases/download/v1.0.3/server.zip",
+      "https://github.com/noamloev/ANUCHKA-RELEASES/releases/download/v2.0.0/Loevflowlocalserver-1.0.0-setup.exe",
       "_blank"
     );
   }
