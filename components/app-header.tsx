@@ -4,6 +4,8 @@ import { Bell, Search, Sparkles, Download } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { onlineApi } from "@/lib/api-online";
 import { useLanguage } from "@/components/language-provider";
+import { LATEST_AGENT_VERSION, AGENT_INSTALLER_URL } from "@/lib/agent-version";
+import { compareVersions } from "@/lib/utils";
 
 type ServerAlert = {
   id: number;
@@ -19,19 +21,54 @@ export function AppHeader({ title }: { title: string }) {
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [alerts, setAlerts] = useState<ServerAlert[]>([]);
   const { t, dir } = useLanguage();
+  const [agentVersion, setAgentVersion] = useState<string>("");
+  const [agentNeedsUpdate, setAgentNeedsUpdate] = useState(false);
 
   async function checkLocalServer() {
+  try {
+    const healthRes = await fetch("http://127.0.0.1:8000/health", {
+      method: "GET",
+    });
+
+    if (!healthRes.ok) {
+      setLocalStatus("offline");
+      setAgentVersion("");
+      setAgentNeedsUpdate(false);
+      return;
+    }
+
+    setLocalStatus("online");
+
     try {
-      const res = await fetch("http://127.0.0.1:8000/health", {
+      const versionRes = await fetch("http://127.0.0.1:8000/version", {
         method: "GET",
       });
 
-      if (res.ok) setLocalStatus("online");
-      else setLocalStatus("offline");
+      if (versionRes.ok) {
+        const versionData = await versionRes.json();
+        const localVersion = String(versionData?.version || "").trim();
+
+        setAgentVersion(localVersion);
+
+        if (localVersion) {
+          setAgentNeedsUpdate(compareVersions(localVersion, LATEST_AGENT_VERSION) < 0);
+        } else {
+          setAgentNeedsUpdate(false);
+        }
+      } else {
+        setAgentVersion("");
+        setAgentNeedsUpdate(false);
+      }
     } catch {
-      setLocalStatus("offline");
+      setAgentVersion("");
+      setAgentNeedsUpdate(false);
     }
+  } catch {
+    setLocalStatus("offline");
+    setAgentVersion("");
+    setAgentNeedsUpdate(false);
   }
+}
 
   async function loadAlerts() {
     try {
@@ -64,10 +101,7 @@ export function AppHeader({ title }: { title: string }) {
   }, []);
 
   function downloadLocalServer() {
-    window.open(
-      "https://github.com/noamloev/ANUCHKA-RELEASES/releases/download/v2.0.0/Loevflowlocalserver-1.0.0-setup.exe",
-      "_blank"
-    );
+    window.open(AGENT_INSTALLER_URL, "_blank");
   }
 
   const unreadCount = useMemo(
@@ -108,22 +142,34 @@ export function AppHeader({ title }: { title: string }) {
           </div>
 
           {localStatus === "online" ? (
-            <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
-              🟢 {t("header.connected")}
-            </div>
-          ) : localStatus === "offline" ? (
-            <button
-              onClick={downloadLocalServer}
-              className="flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
-            >
-              <Download className="h-4 w-4" />
-              {t("header.download_agent")}
-            </button>
-          ) : (
-            <div className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm">
-              {t("header.checking")}
-            </div>
-          )}
+  agentNeedsUpdate ? (
+    <button
+      onClick={downloadLocalServer}
+      className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100"
+    >
+      <Download className="h-4 w-4" />
+      {t("header.update_agent")}
+      {agentVersion ? ` (${agentVersion} → ${LATEST_AGENT_VERSION})` : ""}
+    </button>
+  ) : (
+    <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
+      🟢 {t("header.connected")}
+      {agentVersion ? ` ${agentVersion}` : ""}
+    </div>
+  )
+) : localStatus === "offline" ? (
+  <button
+    onClick={downloadLocalServer}
+    className="flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+  >
+    <Download className="h-4 w-4" />
+    {t("header.download_agent")}
+  </button>
+) : (
+  <div className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm">
+    {t("header.checking")}
+  </div>
+)}
 
           <div className="relative">
             <button

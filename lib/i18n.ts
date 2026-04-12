@@ -320,10 +320,12 @@ export const translations: Record<AppLanguage, Dict> = {
 "pages.dashboard.premium_sidebar": "Premium sidebar navigation",
 "pages.dashboard.sticky_header": "Sticky top header",
 "pages.dashboard.softer_cards": "Softer cards and cleaner depth",
+"header.update_agent": "Update Local Agent",
 
 
   },
   he: {
+    "header.update_agent": "עדכן סוכן מקומי",
     "common.save": "שמור",
     "common.cancel": "ביטול",
     "common.refresh": "רענון",
