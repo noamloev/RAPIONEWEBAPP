@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  Package,
+  ArrowLeftRight,
   Boxes,
   FileBarChart2,
-  PieChart,
-  Users,
-  Settings,
-  PhoneIcon,
+  LayoutDashboard,
+  Package,
   PersonStandingIcon,
+  PhoneIcon,
+  PieChart,
+  Settings,
+  Users,
 } from "lucide-react";
 import { useLanguage } from "@/components/language-provider";
 
@@ -20,6 +21,7 @@ const items = [
   { href: "/clients", labelKey: "nav.clients", icon: PersonStandingIcon },
   { href: "/products", labelKey: "nav.products", icon: Package },
   { href: "/inventory", labelKey: "nav.inventory", icon: Boxes },
+  { href: "/transfers", labelKey: "nav.transfers", icon: ArrowLeftRight },
   { href: "/daily-report", labelKey: "nav.daily_report", icon: FileBarChart2 },
   { href: "/follow-up", labelKey: "nav.follow_up", icon: PhoneIcon },
   { href: "/product-statistics", labelKey: "nav.product_statistics", icon: PieChart },
