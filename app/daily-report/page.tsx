@@ -246,6 +246,17 @@ export default function DailyReportPage() {
           clearInterval(timer);
           setRunningDaily(false);
           setSuccessMessage(t("pages.daily.run_completed"));
+          // Optimistically mark the selected date as GREEN for past dates —
+          // the server confirms this on the next refresh.
+          const todayStr = new Date().toISOString().slice(0, 10);
+          if (dateStr < todayStr) {
+            setRunStatuses((prev) => {
+              const rest = prev.filter((r) => r.date !== dateStr);
+              return [...rest, { date: dateStr, status: "GREEN" }].sort((a, b) =>
+                a.date.localeCompare(b.date)
+              );
+            });
+          }
           await refreshAll();
         }
         if (data.status === "error") {
