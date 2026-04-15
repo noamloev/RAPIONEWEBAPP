@@ -26,6 +26,17 @@ function formatDateForLocalReceipts(date: string) {
 
 type ViewMode = "sales" | "flags" | "runs" | "inventory";
 
+type HttpTestRow = {
+  customer_name: string;
+  item_name: string;
+  total: number;
+  item_code: string;
+  branch_name: string;
+  invoice_no: string;
+  doc_date: string;
+  classification?: string;
+};
+
 function LuxuryCard({
   title,
   description,
@@ -78,6 +89,14 @@ export default function DailyReportPage() {
   const [checkingReceipts, setCheckingReceipts] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  const [httpTestLoading, setHttpTestLoading] = useState(false);
+  const [httpTestResult, setHttpTestResult] = useState<{
+    total_rows: number;
+    filtered_system_items: number;
+    rows: HttpTestRow[];
+  } | null>(null);
+  const [httpTestError, setHttpTestError] = useState("");
 
   const allBranchesLabel = t("pages.daily.all_branches");
   const branchParam = selectedBranch === allBranchesLabel ? undefined : selectedBranch;
@@ -320,6 +339,23 @@ export default function DailyReportPage() {
     }
   }
 
+  async function handleHttpTest() {
+    try {
+      setHttpTestLoading(true);
+      setHttpTestResult(null);
+      setHttpTestError("");
+      const res = await onlineApi.get("/rapidone/daily/test-http", {
+        params: { date_str: dateStr },
+      });
+      setHttpTestResult(res.data);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { detail?: string } }; message?: string };
+      setHttpTestError(e?.response?.data?.detail || e?.message || "HTTP test failed");
+    } finally {
+      setHttpTestLoading(false);
+    }
+  }
+
   const stats = useMemo(() => {
     const flagsCount = flags.length;
     const critCount = flags.filter((f) => f.severity === "CRIT").length;
@@ -450,6 +486,56 @@ export default function DailyReportPage() {
               {loading ? t("common.refreshing") : t("common.refresh")}
             </button>
           </div>
+
+          {/* TEMP TEST SECTION - REMOVE BEFORE PROD */}
+          {/*<div className="mt-4 rounded-xl border-2 border-dashed border-yellow-400 bg-yellow-50 p-4">
+            <p className="mb-2 text-xs font-bold text-yellow-700">
+              ⚠ TEMP – REMOVE BEFORE PROD
+            </p>
+            <button
+              onClick={handleHttpTest}
+              disabled={httpTestLoading}
+              className="rounded-xl bg-yellow-500 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-600 disabled:opacity-50"
+            >
+              {httpTestLoading ? t("common.loading") : "🧪 Daily Report Test (HTTP)"}
+            </button>
+
+            {httpTestError && (
+              <p className="mt-2 text-sm text-red-600">{httpTestError}</p>
+            )}
+
+            {httpTestResult && (
+              <div className="mt-3">
+                <p className="text-sm text-gray-700">
+                  {t("pages.daily.httpTestTotalRows")}: <strong>{httpTestResult.total_rows}</strong>
+                  {" | "}
+                  {t("pages.daily.httpTestFiltered")}: <strong>{httpTestResult.filtered_system_items}</strong>
+                </p>
+                <div className="mt-2 overflow-x-auto">
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-yellow-100">
+                        <th className="border border-yellow-300 px-2 py-1 text-left">{t("table.customerName")}</th>
+                        <th className="border border-yellow-300 px-2 py-1 text-left">{t("table.itemName")}</th>
+                        <th className="border border-yellow-300 px-2 py-1 text-right">{t("table.total")}</th>
+                        <th className="border border-yellow-300 px-2 py-1 text-left">{t("pages.daily.httpTestClassification")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {httpTestResult.rows.map((row: HttpTestRow, i: number) => (
+                        <tr key={i} className="hover:bg-yellow-50">
+                          <td className="border border-yellow-300 px-2 py-1">{row.customer_name}</td>
+                          <td className="border border-yellow-300 px-2 py-1">{row.item_name}</td>
+                          <td className="border border-yellow-300 px-2 py-1 text-right">{row.total}</td>
+                          <td className="border border-yellow-300 px-2 py-1">{row.classification ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>*/}
         </LuxuryCard>
 
         {/* Progress card — shown while job running or just finished */}
