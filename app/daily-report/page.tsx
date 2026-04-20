@@ -19,11 +19,6 @@ function formatDateForApi(date: string) {
   return date;
 }
 
-function formatDateForLocalReceipts(date: string) {
-  const [year, month, day] = date.split("-");
-  return `${day}/${month}/${year}`;
-}
-
 type ViewMode = "sales" | "flags" | "runs" | "inventory";
 
 type HttpTestRow = {
@@ -98,6 +93,45 @@ export default function DailyReportPage() {
   } | null>(null);
   const [httpTestError, setHttpTestError] = useState("");
 
+  // Test: new direct-HTTP pipeline
+  type RawRow = {
+    doc_date: string;
+    branch_name: string;
+    invoice_no: string;
+    customer_name: string;
+    mobile: string;
+    item_code: string;
+    item_name: string;
+    quantity: number;
+    unit_price: number | null;
+    total: number | null;
+    discount_pct: number | null;
+    high_discount: boolean;
+    classification: string;
+    classification_reason: string;
+    line_key: string;
+    is_tracked: boolean;
+  };
+  type TestRunResult = {
+    ok: boolean;
+    date: string;
+    total_rows_fetched: number;
+    filtered_system_items: number;
+    tracked_rows: number;
+    untracked_rows: number;
+    client_activity_created: number;
+    sales_created: number;
+    sales_updated: number;
+    deductions_applied: number;
+    discount_flags_created: number;
+    apply_inventory: boolean;
+    log_lines: string[];
+    raw_rows: RawRow[];
+  };
+  const [testRunResult, setTestRunResult] = useState<TestRunResult | null>(null);
+  const [testRunError, setTestRunError] = useState("");
+  const [lastRanAt, setLastRanAt] = useState<string | null>(null);
+
   const allBranchesLabel = t("pages.daily.all_branches");
   const branchParam = selectedBranch === allBranchesLabel ? undefined : selectedBranch;
 
@@ -169,11 +203,20 @@ export default function DailyReportPage() {
   async function loadInventoryChanges() {
     try {
       const res = await onlineApi.get<InventoryHistoryRow[]>("/inventory/history", {
-        params: { date_str: dateStr, limit: 100 },
+        params: { date_str: dateStr, limit: 100, source: "daily_report" },
       });
       setInventoryChanges(res.data ?? []);
     } catch {
       setInventoryChanges([]);
+    }
+  }
+
+  async function loadLastRanAt() {
+    try {
+      const res = await onlineApi.get<{ last_ran_at: string | null }>("/daily-runs/latest");
+      setLastRanAt(res.data?.last_ran_at ?? null);
+    } catch {
+      // non-critical
     }
   }
 
@@ -189,6 +232,7 @@ export default function DailyReportPage() {
         loadFlags(),
         loadRunStatuses(),
         loadInventoryChanges(),
+        loadLastRanAt(),
       ]);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } }; message?: string };
@@ -294,28 +338,76 @@ export default function DailyReportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dailyJobId, t]);
 
+  const [forceRunning, setForceRunning] = useState(false);
+
+  async function _runDaily(forceReclassify: boolean) {
+    const setLoaderFn = forceReclassify ? setForceRunning : setRunningDaily;
+    try {
+      setLoaderFn(true);
+      setError("");
+      setSuccessMessage("");
+      setTestRunResult(null);
+      setTestRunError("");
+
+      const res = await onlineApi.post("/rapidone/daily/run", null, {
+        params: {
+          date_str: dateStr,
+          ...(branchParam ? { branch: branchParam } : {}),
+          apply_inventory: applyInventory,
+          ...(forceReclassify ? { force_reclassify: true } : {}),
+        },
+      });
+      setTestRunResult(res.data);
+      setSuccessMessage(t("pages.daily.run_completed"));
+      await loadLastRanAt();
+      await Promise.all([loadSummary(), loadSales(), loadFlags(), loadRunStatuses()]);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { detail?: string } }; message?: string };
+      setTestRunError(e?.response?.data?.detail || e?.message || t("pages.daily.run_failed"));
+      setError(e?.response?.data?.detail || e?.message || t("pages.daily.run_failed"));
+    } finally {
+      setLoaderFn(false);
+    }
+  }
+
   async function handleRunDaily() {
     try {
       setRunningDaily(true);
       setError("");
       setSuccessMessage("");
-      setDailyProgressLines([]);
-      setDailyJobId("");
-      setDailyJobStatus("");
-      const res = await localApi.post("/ensure/daily/start", null, {
+      setTestRunResult(null);
+      setTestRunError("");
+
+      // ── HTTP pipeline (online server) ─────────────────────────────────────
+      const res = await onlineApi.post("/rapidone/daily/run", null, {
         params: {
-          date_str: formatDateForApi(dateStr),
-          branch: branchParam || "all",
-          apply_inventory: applyInventory ? 1 : 0,
+          date_str: dateStr,
+          ...(branchParam ? { branch: branchParam } : {}),
+          apply_inventory: applyInventory,
         },
       });
-      const jobId = res.data?.job_id;
-      if (!jobId) throw new Error(t("pages.daily.no_job_id"));
-      setDailyJobId(jobId);
-      setDailyJobStatus("running");
+      setTestRunResult(res.data);
+      setSuccessMessage(t("pages.daily.run_completed"));
+      await loadLastRanAt();
+      await Promise.all([loadSummary(), loadSales(), loadFlags(), loadRunStatuses()]);
+
+      // ── Local server fallback (keep as comment for emergency use) ─────────
+      // const res = await localApi.post("/ensure/daily/start", null, {
+      //   params: {
+      //     date_str: formatDateForApi(dateStr),
+      //     branch: branchParam || "all",
+      //     apply_inventory: applyInventory ? 1 : 0,
+      //   },
+      // });
+      // const jobId = res.data?.job_id;
+      // if (!jobId) throw new Error(t("pages.daily.no_job_id"));
+      // setDailyJobId(jobId);
+      // setDailyJobStatus("running");
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } }; message?: string };
+      setTestRunError(e?.response?.data?.detail || e?.message || t("pages.daily.run_failed"));
       setError(e?.response?.data?.detail || e?.message || t("pages.daily.run_failed"));
+    } finally {
       setRunningDaily(false);
     }
   }
@@ -325,17 +417,28 @@ export default function DailyReportPage() {
       setCheckingReceipts(true);
       setError("");
       setSuccessMessage("");
-      const res = await localApi.post("/local/check-receipts/start", null, {
-        params: { date_str: formatDateForLocalReceipts(dateStr) },
+      const res = await onlineApi.post("/checks/receipts/run", null, {
+        params: { date_str: dateStr },
       });
-      const jobId = res.data?.job_id;
-      if (!jobId) throw new Error(t("pages.daily.no_receipts_job_id"));
-      setReceiptsJobId(jobId);
-      setSuccessMessage(t("pages.daily.receipts_started"));
+      const result = res.data;
+      const missingReceiptCount = result?.missing_receipt_count ?? result?.missing_receipt?.length ?? 0;
+      const missingInvoiceCount = result?.missing_invoice_count ?? result?.missing_invoice?.length ?? 0;
+      const mismatchCount = result?.mismatch_count ?? result?.mismatch?.length ?? 0;
+      setSuccessMessage(t("pages.daily.receipts_finished_success"));
+
+      // Local-server fallback kept as a rollback reference.
+      // const res = await localApi.post("/local/check-receipts/start", null, {
+      //   params: { date_str: formatDateForLocalReceipts(dateStr) },
+      // });
+      // const jobId = res.data?.job_id;
+      // if (!jobId) throw new Error(t("pages.daily.no_receipts_job_id"));
+      // setReceiptsJobId(jobId);
+      // setSuccessMessage(t("pages.daily.receipts_started"));
     } catch (err: unknown) {
-      setCheckingReceipts(false);
       const e = err as { response?: { data?: { detail?: string } }; message?: string };
       setError(e?.response?.data?.detail || e?.message || t("pages.daily.receipts_failed"));
+    } finally {
+      setCheckingReceipts(false);
     }
   }
 
@@ -354,6 +457,53 @@ export default function DailyReportPage() {
     } finally {
       setHttpTestLoading(false);
     }
+  }
+
+  function handleDownloadCsv() {
+    if (!testRunResult?.raw_rows?.length) return;
+
+    const escape = (v: string | number | null | undefined) =>
+      `"${String(v ?? "").replace(/"/g, '""')}"`;
+
+    const headers = [
+      "Date", "Branch", "Invoice", "Customer", "Mobile",
+      "Item Code", "Item Name", "Qty", "Unit Price", "Total",
+      "Discount %", "High Discount", "Classification", "Classification Reason", "Line Key",
+    ];
+
+    const csvRows = testRunResult.raw_rows.filter((r) => r.is_tracked);
+
+    const lines = [
+      headers.map(escape).join(","),
+      ...csvRows.map((r) =>
+        [
+          r.doc_date,
+          r.branch_name,
+          r.invoice_no,
+          r.customer_name,
+          r.mobile,
+          r.item_code,
+          r.item_name,
+          r.quantity,
+          r.unit_price ?? "",
+          r.total ?? "",
+          r.discount_pct ?? "",
+          r.high_discount ? "YES" : "",
+          r.classification,
+          r.classification_reason ?? "",
+          r.line_key,
+        ].map(escape).join(",")
+      ),
+    ];
+
+    // utf-8 BOM so Excel opens Hebrew text correctly
+    const bom = "\uFEFF";
+    const blob = new Blob([bom + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `daily_report_${dateStr}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   }
 
   const stats = useMemo(() => {
@@ -393,8 +543,39 @@ export default function DailyReportPage() {
       ? t("pages.daily.status_yellow")
       : selectedDateRunStatus;
 
+  const nextRunTime = (() => {
+    const schedule = [8, 10, 12, 14, 16, 18, 20, 22];
+    const now = new Date();
+    const h = now.getHours();
+    const next = schedule.find((s) => s > h);
+    if (!next) return t("pages.daily.next_run_tomorrow");
+    const d = new Date();
+    d.setHours(next, 0, 0, 0);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  })();
+
+  const lastRanAtDisplay = (
+    <div className="flex w-full max-w-lg items-center gap-4 rounded-full border border-[var(--border)] bg-white/90 px-4 py-2 shadow-[var(--shadow-card)]">
+      {lastRanAt ? (
+        <>
+          <span className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
+            {t("pages.daily.last_ran_at")}
+          </span>
+          <span className="text-sm font-medium text-[var(--primary-dark)]">
+            {new Date(lastRanAt).toLocaleString()}
+          </span>
+          <span className="text-[var(--border)]">|</span>
+        </>
+      ) : null}
+      <span className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
+        {t("pages.daily.next_run")}
+      </span>
+      <span className="text-sm font-medium text-emerald-700">{nextRunTime}</span>
+    </div>
+  );
+
   return (
-    <PageShell title={t("pages.daily.title")}>
+    <PageShell title={t("pages.daily.title")} headerCenter={lastRanAtDisplay}>
       <div className="space-y-6">
         {error ? (
           <div className="rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
@@ -464,10 +645,18 @@ export default function DailyReportPage() {
           <div className="mt-5 flex flex-wrap gap-3">
             <button
               onClick={handleRunDaily}
-              disabled={runningDaily}
+              disabled={runningDaily || forceRunning}
               className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {runningDaily ? t("pages.daily.running") : t("pages.daily.run_daily")}
+            </button>
+
+            <button
+              onClick={() => _runDaily(true)}
+              disabled={runningDaily || forceRunning}
+              className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {forceRunning ? t("pages.daily.running") : t("pages.daily.recheck_all")}
             </button>
 
             <button
@@ -486,6 +675,7 @@ export default function DailyReportPage() {
               {loading ? t("common.refreshing") : t("common.refresh")}
             </button>
           </div>
+
 
           {/* TEMP TEST SECTION - REMOVE BEFORE PROD */}
           {/*<div className="mt-4 rounded-xl border-2 border-dashed border-yellow-400 bg-yellow-50 p-4">
@@ -538,72 +728,19 @@ export default function DailyReportPage() {
           </div>*/}
         </LuxuryCard>
 
-        {/* Progress card — shown while job running or just finished */}
-        {dailyJobId ? (
-          <LuxuryCard title={t("pages.daily.progress_title")}>
-            <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <p className="text-sm text-[var(--muted)]">
-                {dailyJobStatus === "done"
-                  ? t("pages.daily.completed")
-                  : dailyJobStatus === "error"
-                  ? t("pages.daily.failed")
-                  : t("pages.daily.running")}
-              </p>
+        {/* Loading bar — shown while a run is in progress */}
+        {(runningDaily || forceRunning) ? (
+          <div className="rounded-[30px] border border-[var(--border)] bg-white/88 px-6 py-4 shadow-[var(--shadow-card)]">
+            <div className="mb-2 flex items-center justify-between text-sm text-[var(--muted-strong)]">
+              <span>{forceRunning ? t("pages.daily.recheck_all") : t("pages.daily.run_daily")} — {t("pages.daily.running")}</span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--accent)]">
               <div
-                className={`rounded-2xl px-4 py-2 text-sm font-medium ${
-                  dailyJobStatus === "done"
-                    ? "bg-emerald-50 text-emerald-700"
-                    : dailyJobStatus === "error"
-                    ? "bg-red-50 text-red-700"
-                    : "bg-[var(--card-soft)] text-[var(--primary-dark)]"
-                }`}
-              >
-                {dailyJobStatus || "running"}
-              </div>
+                className="h-2 w-1/3 rounded-full bg-[var(--primary-strong)]"
+                style={{ animation: "slide 1.4s linear infinite" }}
+              />
             </div>
-
-            {/* Progress bar */}
-            <div className="mb-4">
-              <div className="mb-2 flex items-center justify-between text-sm text-[var(--muted-strong)]">
-                <span>{t("pages.daily.progress")}</span>
-                <span>{progressPercent === -1 ? "…" : `${progressPercent}%`}</span>
-              </div>
-              <div className="h-3 w-full overflow-hidden rounded-full bg-[var(--accent)]">
-                {progressPercent === -1 ? (
-                  // Indeterminate — animated stripe
-                  <div
-                    className="h-3 w-1/3 rounded-full bg-[var(--primary-strong)]"
-                    style={{ animation: "slide 1.4s linear infinite" }}
-                  />
-                ) : (
-                  <div
-                    className={`h-3 rounded-full transition-all duration-500 ${
-                      dailyJobStatus === "done"
-                        ? "bg-emerald-500"
-                        : dailyJobStatus === "error"
-                        ? "bg-red-500"
-                        : "bg-[var(--primary-strong)]"
-                    }`}
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                )}
-              </div>
-            </div>
-
-            {/* Live log */}
-            {recentLines.length > 0 ? (
-              <div className="mt-2">
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-                  {t("pages.daily.progress_log")}
-                </p>
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] p-3 font-mono text-xs leading-relaxed text-[var(--muted-strong)]">
-                  {recentLines.map((line, i) => (
-                    <div key={i}>{line}</div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </LuxuryCard>
+          </div>
         ) : null}
 
         {/* Summary cards */}
@@ -612,7 +749,6 @@ export default function DailyReportPage() {
             { label: t("pages.daily.sales_count"), value: summary?.sales_count ?? "--", view: "sales" as ViewMode },
             { label: t("pages.daily.revenue"), value: summary?.revenue ?? "--", view: "sales" as ViewMode },
             { label: t("pages.daily.flags"), value: stats.flagsCount, view: "flags" as ViewMode },
-            { label: t("pages.daily.crit_flags"), value: stats.critCount, view: "flags" as ViewMode },
             { label: t("pages.daily.inventory_tab"), value: inventoryChanges.length, view: "inventory" as ViewMode },
           ].map((item) => (
             <button

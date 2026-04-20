@@ -21,6 +21,19 @@ type Product = {
   item_name: string;
 };
 
+type CtpInputRow = { item_code: string; amount_at_date: string; date_str: string };
+
+type CtpResultRow = {
+  ok: boolean;
+  item_code: string;
+  branch: string;
+  sold_since?: number;
+  old_qty?: number;
+  new_qty?: number;
+  action_group_id?: string;
+  error?: string;
+};
+
 type InventoryRow = {
   branch?: string;
   item_code: string;
@@ -64,6 +77,15 @@ export default function InventoryPage() {
   const [undoPreviewRows, setUndoPreviewRows] = useState<InventoryHistoryRow[] | null>(null);
   const [undoPreviewActionGroupId, setUndoPreviewActionGroupId] = useState<string | null>(null);
   const [undoModalOpen, setUndoModalOpen] = useState(false);
+
+  // Change the Past modal state
+  const [ctpModalOpen, setCtpModalOpen] = useState(false);
+
+  const [ctpRows, setCtpRows] = useState<CtpInputRow[]>([
+    { item_code: "", amount_at_date: "", date_str: "" },
+  ]);
+  const [ctpResults, setCtpResults] = useState<CtpResultRow[] | null>(null);
+  const [ctpRunning, setCtpRunning] = useState(false);
 
   async function loadBranches() {
     const res = await onlineApi.get<Branch[]>("/branches");
@@ -249,6 +271,64 @@ export default function InventoryPage() {
 
   const undoRowsSorted = useMemo(() => undoPreviewRows ?? [], [undoPreviewRows]);
 
+  function openCtpModal() {
+    setCtpRows([{ item_code: "", amount_at_date: "", date_str: "" }]);
+    setCtpResults(null);
+    setCtpModalOpen(true);
+  }
+
+  function closeCtpModal() {
+    if (ctpRunning) return;
+    setCtpModalOpen(false);
+    setCtpResults(null);
+  }
+
+  function ctpAddRow() {
+    setCtpRows((prev) => [...prev, { item_code: "", amount_at_date: "", date_str: "" }]);
+  }
+
+  function ctpRemoveRow(idx: number) {
+    setCtpRows((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function ctpUpdateRow(idx: number, field: keyof CtpInputRow, value: string) {
+    setCtpRows((prev) => prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r)));
+  }
+
+  async function runCtpModal() {
+    try {
+      setCtpRunning(true);
+      setError("");
+      setSuccess("");
+      setCtpResults(null);
+
+      const validRows = ctpRows.filter((r) => r.item_code && r.amount_at_date && r.date_str);
+      if (validRows.length === 0) return;
+
+      const res = await onlineApi.post<CtpResultRow[]>("/inventory/change-past", {
+        rows: validRows.map((r) => ({
+          item_code: r.item_code,
+          branch: selectedBranch,
+          amount_at_date: Number(r.amount_at_date),
+          date_str: r.date_str,
+        })),
+      });
+
+      setCtpResults(res.data ?? []);
+      const anyOk = (res.data ?? []).some((r) => r.ok);
+      if (anyOk) {
+        setSuccess(t("pages.inventory.ctp_success"));
+        await loadInventory();
+      }
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.detail || err?.message || t("pages.inventory.ctp_failed")
+      );
+    } finally {
+      setCtpRunning(false);
+    }
+  }
+
   return (
     <PageShell title={t("pages.inventory.title")}>
       <div className="space-y-6">
@@ -312,6 +392,15 @@ export default function InventoryPage() {
             >
               {undoing ? t("pages.inventory.undoing") : t("pages.inventory.undo_last_change")}
             </SecondaryButton>
+
+            <SecondaryButton
+              onClick={openCtpModal}
+              disabled={!selectedBranch}
+              className="border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100"
+            >
+              {t("pages.inventory.change_the_past")}
+            </SecondaryButton>
+
           </div>
         </SectionCard>
 
@@ -402,6 +491,105 @@ export default function InventoryPage() {
             )}
           </DataTable>
         </SectionCard>
+
+        {ctpModalOpen ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4">
+            <div className="w-full max-w-4xl rounded-3xl border border-violet-200 bg-white p-6 shadow-2xl">
+              <div className="mb-4">
+                <h2 className="text-xl font-semibold text-violet-950">
+                  {t("pages.inventory.ctp_title")}
+                </h2>
+                <p className="mt-1 text-sm text-violet-500">
+                  {t("pages.inventory.ctp_desc")}
+                </p>
+                <p className="mt-1 text-xs text-violet-400">
+                  {t("pages.inventory.selected_branch")}: <strong>{selectedBranch}</strong>
+                </p>
+              </div>
+
+              <div className="space-y-3 mb-4">
+                {ctpRows.map((row, idx) => (
+                  <div key={idx} className="flex flex-wrap gap-2 items-center">
+                    <div className="flex-1 min-w-[180px]">
+                      <select
+                        className="w-full rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-300"
+                        value={row.item_code}
+                        onChange={(e) => ctpUpdateRow(idx, "item_code", e.target.value)}
+                      >
+                        <option value="">{t("pages.inventory.ctp_product")}</option>
+                        {products.map((p) => (
+                          <option key={p.item_code} value={p.item_code}>
+                            {p.item_name} ({p.item_code})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-28 rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-300"
+                      placeholder={t("pages.inventory.ctp_amount")}
+                      value={row.amount_at_date}
+                      onChange={(e) => ctpUpdateRow(idx, "amount_at_date", e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      className="w-36 rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-300"
+                      placeholder={t("pages.inventory.ctp_date")}
+                      value={row.date_str}
+                      onChange={(e) => ctpUpdateRow(idx, "date_str", e.target.value)}
+                    />
+                    {ctpResults && ctpResults[idx] ? (
+                      <span
+                        className={`text-xs px-2 py-1 rounded-lg ${
+                          ctpResults[idx].ok
+                            ? "bg-green-50 text-green-700 border border-green-200"
+                            : "bg-red-50 text-red-700 border border-red-200"
+                        }`}
+                      >
+                        {ctpResults[idx].ok
+                          ? `${t("pages.inventory.ctp_sold_since")}: ${ctpResults[idx].sold_since} → ${t("pages.inventory.ctp_new_qty")}: ${ctpResults[idx].new_qty}`
+                          : ctpResults[idx].error}
+                      </span>
+                    ) : null}
+                    {ctpRows.length > 1 ? (
+                      <button
+                        onClick={() => ctpRemoveRow(idx)}
+                        disabled={ctpRunning}
+                        className="text-xs text-red-400 hover:text-red-600 px-2"
+                      >
+                        {t("pages.inventory.ctp_remove")}
+                      </button>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-2 mb-5">
+                <button
+                  onClick={ctpAddRow}
+                  disabled={ctpRunning}
+                  className="text-sm text-violet-600 hover:text-violet-800 underline"
+                >
+                  + {t("pages.inventory.ctp_add_row")}
+                </button>
+              </div>
+
+              <div className="flex flex-wrap justify-end gap-3">
+                <SecondaryButton onClick={closeCtpModal} disabled={ctpRunning}>
+                  {t("common.cancel")}
+                </SecondaryButton>
+                <PrimaryButton
+                  onClick={runCtpModal}
+                  disabled={ctpRunning || !selectedBranch}
+                  className="bg-violet-600 hover:bg-violet-700 border-violet-700"
+                >
+                  {ctpRunning ? t("pages.inventory.ctp_running") : t("pages.inventory.ctp_run")}
+                </PrimaryButton>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {undoModalOpen ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4">

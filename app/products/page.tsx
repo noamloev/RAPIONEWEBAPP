@@ -14,6 +14,8 @@ type ProductCreatePayload = {
   currency: string;
 };
 
+type AliasRow = { alias_code: string; alias_name: string };
+
 export default function ProductsPage() {
   const { t } = useLanguage();
 
@@ -21,11 +23,66 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
+
+  // Add Custom Product modal state
+  const [customModalOpen, setCustomModalOpen] = useState(false);
+  const [customMainCode, setCustomMainCode] = useState("");
+  const [customMainName, setCustomMainName] = useState("");
+  const [customBasePrice, setCustomBasePrice] = useState("");
+  const [customAliases, setCustomAliases] = useState<AliasRow[]>([{ alias_code: "", alias_name: "" }]);
+  const [customSaving, setCustomSaving] = useState(false);
 
   const [search, setSearch] = useState("");
   const [itemCode, setItemCode] = useState("");
   const [itemName, setItemName] = useState("");
   const [basePrice, setBasePrice] = useState("");
+
+  function openCustomModal() {
+    setCustomMainCode("");
+    setCustomMainName("");
+    setCustomBasePrice("");
+    setCustomAliases([{ alias_code: "", alias_name: "" }]);
+    setCustomModalOpen(true);
+  }
+
+  function customAddAlias() {
+    setCustomAliases((prev) => [...prev, { alias_code: "", alias_name: "" }]);
+  }
+
+  function customRemoveAlias(idx: number) {
+    setCustomAliases((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function customUpdateAlias(idx: number, field: keyof AliasRow, value: string) {
+    setCustomAliases((prev) => prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r)));
+  }
+
+  async function saveCustomProduct() {
+    if (!customMainCode.trim() || !customMainName.trim()) {
+      setError(t("pages.inventory.custom_failed") + ": code and name are required");
+      return;
+    }
+    try {
+      setCustomSaving(true);
+      setError("");
+      setSuccess("");
+      const aliases = customAliases.filter((a) => a.alias_code.trim());
+      await onlineApi.post("/product-aliases/create-group", {
+        main_code: customMainCode.trim(),
+        main_name: customMainName.trim(),
+        base_price: customBasePrice ? Number(customBasePrice) : null,
+        aliases,
+      });
+      setSuccess(t("pages.inventory.custom_success"));
+      setCustomModalOpen(false);
+      await loadProducts();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || err?.message || t("pages.inventory.custom_failed"));
+    } finally {
+      setCustomSaving(false);
+    }
+  }
 
   async function loadProducts() {
     try {
@@ -127,6 +184,18 @@ export default function ProductsPage() {
   return (
     <PageShell title={t("pages.products.title")}>
       <div className="space-y-6">
+        {error ? (
+          <div className="rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
+            {error}
+          </div>
+        ) : null}
+
+        {success ? (
+          <div className="rounded-2xl border border-[var(--success-border)] bg-[var(--success-bg)] px-4 py-3 text-sm text-[var(--success-text)]">
+            {success}
+          </div>
+        ) : null}
+
         <section className="rounded-[30px] border border-[var(--border)] bg-white/88 p-6 shadow-[var(--shadow-card)]">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-[var(--primary-deep)]">
@@ -202,7 +271,7 @@ export default function ProductsPage() {
               </p>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap">
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -217,14 +286,16 @@ export default function ProductsPage() {
               >
                 {loading ? t("common.refreshing") : t("common.refresh")}
               </button>
+
+              <button
+                onClick={openCustomModal}
+                className="rounded-2xl border border-teal-200 bg-teal-50 px-5 py-3 text-sm font-semibold text-teal-800 transition hover:bg-teal-100"
+              >
+                {t("pages.inventory.add_custom")}
+              </button>
             </div>
           </div>
 
-          {error ? (
-            <div className="mb-4 rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
-              {error}
-            </div>
-          ) : null}
 
           <div className="overflow-x-auto rounded-2xl border border-[var(--border)]">
             <table className="min-w-full divide-y divide-[var(--border)]">
@@ -296,6 +367,112 @@ export default function ProductsPage() {
             </table>
           </div>
         </section>
+        {customModalOpen ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4">
+            <div className="w-full max-w-2xl rounded-3xl border border-teal-200 bg-white p-6 shadow-2xl">
+              <div className="mb-5">
+                <h2 className="text-xl font-semibold text-teal-950">
+                  {t("pages.inventory.custom_title")}
+                </h2>
+                <p className="mt-1 text-sm text-teal-500">
+                  {t("pages.inventory.custom_desc")}
+                </p>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3 mb-4">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-teal-700">
+                    {t("pages.inventory.custom_main_code")} *
+                  </label>
+                  <input
+                    className="w-full rounded-xl border border-teal-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300"
+                    value={customMainCode}
+                    onChange={(e) => setCustomMainCode(e.target.value)}
+                    placeholder="e.g. HALLURA"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-teal-700">
+                    {t("pages.inventory.custom_main_name")} *
+                  </label>
+                  <input
+                    className="w-full rounded-xl border border-teal-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300"
+                    value={customMainName}
+                    onChange={(e) => setCustomMainName(e.target.value)}
+                    placeholder="e.g. Hallura"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-teal-700">
+                    {t("pages.inventory.custom_base_price")}
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full rounded-xl border border-teal-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300"
+                    value={customBasePrice}
+                    onChange={(e) => setCustomBasePrice(e.target.value)}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-teal-700">
+                  {t("pages.inventory.custom_aliases")}
+                </p>
+                <div className="space-y-2">
+                  {customAliases.map((alias, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <input
+                        className="flex-1 rounded-xl border border-teal-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300"
+                        placeholder={t("pages.inventory.custom_alias_code")}
+                        value={alias.alias_code}
+                        onChange={(e) => customUpdateAlias(idx, "alias_code", e.target.value)}
+                      />
+                      <input
+                        className="flex-1 rounded-xl border border-teal-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300"
+                        placeholder={t("pages.inventory.custom_alias_name")}
+                        value={alias.alias_name}
+                        onChange={(e) => customUpdateAlias(idx, "alias_name", e.target.value)}
+                      />
+                      {customAliases.length > 1 ? (
+                        <button
+                          onClick={() => customRemoveAlias(idx)}
+                          className="text-xs text-red-400 hover:text-red-600 px-2 shrink-0"
+                        >
+                          ✕
+                        </button>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={customAddAlias}
+                  className="mt-2 text-sm text-teal-600 hover:text-teal-800 underline"
+                >
+                  + {t("pages.inventory.custom_add_alias")}
+                </button>
+              </div>
+
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  onClick={() => setCustomModalOpen(false)}
+                  disabled={customSaving}
+                  className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:opacity-60"
+                >
+                  {t("common.cancel")}
+                </button>
+                <button
+                  onClick={saveCustomProduct}
+                  disabled={customSaving || !customMainCode.trim() || !customMainName.trim()}
+                  className="rounded-2xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow transition hover:-translate-y-0.5 hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {customSaving ? t("pages.inventory.custom_saving") : t("pages.inventory.custom_save")}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </PageShell>
   );

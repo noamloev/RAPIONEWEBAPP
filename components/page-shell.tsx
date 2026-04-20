@@ -8,9 +8,11 @@ import { useLanguage } from "@/components/language-provider";
 export function PageShell({
   title,
   children,
+  headerCenter,
 }: {
   title: string;
   children: ReactNode;
+  headerCenter?: ReactNode;
 }) {
   const { dir, t } = useLanguage();
 
@@ -20,7 +22,7 @@ export function PageShell({
         <AppSidebar />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <AppHeader title={title} />
+          <AppHeader title={title} centerContent={headerCenter} />
 
           <main className="flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
             <div className="mx-auto max-w-[1600px] space-y-6">
