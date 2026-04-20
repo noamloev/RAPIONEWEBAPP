@@ -314,3 +314,4 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
     </header>
   );
 }
+
