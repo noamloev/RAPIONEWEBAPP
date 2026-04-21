@@ -40,10 +40,15 @@ type SettingsPageKey =
   | "general"
   | "daily-report"
   | "clients"
+  | "inventory"
   | "statistics"
   | "follow-up"
   | "rapidone"
   | "session";
+
+type InventoryLowStockSettings = {
+  threshold: number;
+};
 
 type ClientsImportStatus = {
   ok: boolean;
@@ -328,7 +333,10 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [syncingWorkers, setSyncingWorkers] = useState(false);
   const [syncingFollowUp, setSyncingFollowUp] = useState(false);
+  const [syncingInventoryAlerts, setSyncingInventoryAlerts] = useState(false);
+  const [deletingAlerts, setDeletingAlerts] = useState(false);
   const [importingClients, setImportingClients] = useState(false);
+  const [inventoryAlertThreshold, setInventoryAlertThreshold] = useState(25);
   const [clientsImportJobId, setClientsImportJobId] = useState("");
   const [clientsImportStatus, setClientsImportStatus] = useState<ClientsImportStatus | null>(null);
   const [error, setError] = useState("");
@@ -349,6 +357,11 @@ export default function SettingsPage() {
       key: "clients" as const,
       label: t("settings.page_clients"),
       description: t("settings.page_clients_desc"),
+    },
+    {
+      key: "inventory" as const,
+      label: t("settings.page_inventory"),
+      description: t("settings.page_inventory_desc"),
     },
     {
       key: "statistics" as const,
@@ -391,9 +404,11 @@ export default function SettingsPage() {
         onlineApi.get<SettingsPayload>("/settings"),
         onlineApi.get<WorkerRow[]>("/workers"),
       ]);
+      const inventoryAlertsRes = await onlineApi.get<InventoryLowStockSettings>("/inventory/low-stock-settings");
 
       const data = settingsRes.data;
       setWorkers(workersRes.data ?? []);
+      setInventoryAlertThreshold(Number(inventoryAlertsRes.data?.threshold ?? 25));
       setSettings({
         ...DEFAULT_SETTINGS,
         ...data,
@@ -505,6 +520,53 @@ export default function SettingsPage() {
       setError(getErrorMessage(err, t("settings.sync_follow_up_failed")));
     } finally {
       setSyncingFollowUp(false);
+    }
+  }
+
+  async function syncInventoryAlerts() {
+    try {
+      setSyncingInventoryAlerts(true);
+      setError("");
+      setSuccess("");
+
+      const res = await onlineApi.post<{
+        ok: boolean;
+        threshold: number;
+        tracked_products: number;
+        alerts_sent: number;
+      }>("/inventory/low-stock-sync", null, {
+        params: { threshold: Number(inventoryAlertThreshold || 0) },
+      });
+
+      setInventoryAlertThreshold(Number(res.data?.threshold ?? inventoryAlertThreshold));
+      setSuccess(
+        t("settings.inventory_alert_sync_success")
+          .replace("{threshold}", String(res.data?.threshold ?? inventoryAlertThreshold))
+          .replace("{count}", String(res.data?.alerts_sent ?? 0))
+      );
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t("settings.inventory_alert_sync_failed")));
+    } finally {
+      setSyncingInventoryAlerts(false);
+    }
+  }
+
+  async function deleteOldAlerts() {
+    try {
+      setDeletingAlerts(true);
+      setError("");
+      setSuccess("");
+
+      const res = await onlineApi.post<{ ok: boolean; deleted: number }>("/alerts/delete-all", null, {
+        params: { keep_low_inventory: true },
+      });
+      setSuccess(
+        t("settings.alerts_delete_success").replace("{count}", String(res.data?.deleted ?? 0))
+      );
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t("settings.alerts_delete_failed")));
+    } finally {
+      setDeletingAlerts(false);
     }
   }
 
@@ -772,6 +834,44 @@ export default function SettingsPage() {
               </div>
             </Section>
           ) : null}
+        </div>
+      );
+    }
+
+    if (activePage === "inventory") {
+      return (
+        <div className="space-y-6">
+          <Section
+            title={t("settings.inventory_alerts_title")}
+            description={t("settings.inventory_alerts_desc")}
+          >
+            <div className="grid gap-6 md:grid-cols-2">
+              <NumberInput
+                label={t("settings.inventory_alert_threshold")}
+                min={0}
+                value={inventoryAlertThreshold}
+                onChange={(value) => setInventoryAlertThreshold(value)}
+              />
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                onClick={syncInventoryAlerts}
+                disabled={syncingInventoryAlerts}
+                className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:opacity-60"
+              >
+                {syncingInventoryAlerts ? t("settings.inventory_alert_syncing") : t("settings.inventory_alert_sync")}
+              </button>
+
+              <button
+                onClick={deleteOldAlerts}
+                disabled={deletingAlerts}
+                className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:opacity-60"
+              >
+                {deletingAlerts ? t("settings.alerts_deleting") : t("settings.alerts_delete_button")}
+              </button>
+            </div>
+          </Section>
         </div>
       );
     }
