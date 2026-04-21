@@ -40,19 +40,6 @@ type WorkerMonthlyStatsResponse = {
   }[];
 };
 
-type WorkerMonthlyCacheResponse =
-  | { found: false }
-  | {
-      found: true;
-      year: number;
-      month: number;
-      subject: SubjectMode;
-      is_final?: boolean;
-      total_qty: number;
-      total_success_count: number;
-      workers: WorkerMonthlyStatsResponse["workers"];
-    };
-
 function SummaryCard({ title, value }: { title: string; value: string | number }) {
   return (
     <div className="rounded-[28px] border border-[var(--border)] bg-white/88 p-5 shadow-[var(--shadow-card)]">
@@ -92,53 +79,56 @@ export default function WorkerStatisticsPage() {
   const [selectedWorker, setSelectedWorker] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loadedVia, setLoadedVia] = useState<"local" | "online" | "">("");
 
-  async function refreshAll() {
+  function applyPayload(payload: WorkerMonthlyStatsResponse, via: "local" | "online") {
+    setData(payload);
+    setLoadedVia(via);
+    const firstWorker = payload?.workers?.[0]?.worker_name || "";
+    setSelectedWorker(firstWorker);
+  }
+
+  async function refreshFromLocal() {
     try {
       setLoading(true);
       setError("");
+      setSuccess("");
+
+      const [yearStr, monStr] = month.split("-");
+      const year = Number(yearStr);
+      const mon = Number(monStr);
+      const res = await localApi.get<WorkerMonthlyStatsResponse>("/worker-stats/monthly", {
+        params: { year, month: mon, subject },
+      });
+      applyPayload(res.data, "local");
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      setError(typeof detail === "string" ? detail : err?.message || t("pages.worker_stats.load_failed"));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function refreshFromOnlineTest() {
+    try {
+      setLoading(true);
+      setError("");
+      setSuccess("");
 
       const [yearStr, monStr] = month.split("-");
       const year = Number(yearStr);
       const mon = Number(monStr);
 
-      const now = new Date();
-      const isClosedMonth =
-        year < now.getFullYear() ||
-        (year === now.getFullYear() && mon < now.getMonth() + 1);
-
-      let payload: WorkerMonthlyStatsResponse | null = null;
-
-      if (isClosedMonth) {
-        try {
-          const cacheRes = await onlineApi.get<WorkerMonthlyCacheResponse>("/worker-stats/monthly-cache", {
-            params: { year, month: mon, subject },
-          });
-
-          if ("found" in cacheRes.data && cacheRes.data.found) {
-            payload = {
-              year: cacheRes.data.year,
-              month: cacheRes.data.month,
-              subject: cacheRes.data.subject,
-              is_final: cacheRes.data.is_final,
-              total_qty: cacheRes.data.total_qty,
-              total_success_count: cacheRes.data.total_success_count,
-              workers: cacheRes.data.workers,
-            };
-          }
-        } catch {}
-      }
-
-      if (!payload) {
-        const res = await localApi.get<WorkerMonthlyStatsResponse>("/worker-stats/monthly", {
-          params: { year, month: mon, subject },
-        });
-        payload = res.data;
-      }
-
-      setData(payload);
-      const firstWorker = payload?.workers?.[0]?.worker_name || "";
-      setSelectedWorker(firstWorker);
+      const res = await onlineApi.get<WorkerMonthlyStatsResponse>("/worker-stats/monthly", {
+        params: { year, month: mon, subject },
+      });
+      applyPayload(res.data, "online");
+      setSuccess(
+        t("pages.worker_stats.test_success")
+          .replace("{subject}", subjectLabel)
+          .replace("{count}", String(res.data?.total_qty ?? 0))
+      );
     } catch (err: any) {
       const detail = err?.response?.data?.detail;
       setError(typeof detail === "string" ? detail : err?.message || t("pages.worker_stats.load_failed"));
@@ -184,6 +174,12 @@ export default function WorkerStatisticsPage() {
           </div>
         ) : null}
 
+        {success ? (
+          <div className="rounded-2xl border border-[var(--success-border)] bg-[var(--success-bg)] px-4 py-3 text-sm text-[var(--success-text)]">
+            {success}
+          </div>
+        ) : null}
+
         <Section title={t("pages.worker_stats.filters")}>
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <p className="text-sm text-[var(--muted)]">
@@ -218,17 +214,25 @@ export default function WorkerStatisticsPage() {
               </div>
 
               <button
-                onClick={refreshAll}
+                onClick={refreshFromLocal}
                 disabled={loading}
                 className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? t("common.refreshing") : t("common.refresh")}
+                {loading ? t("common.refreshing") : t("pages.worker_stats.get_button")}
+              </button>
+
+              <button
+                onClick={refreshFromOnlineTest}
+                disabled={loading}
+                className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? t("pages.worker_stats.test_running") : t("pages.worker_stats.test_button")}
               </button>
             </div>
           </div>
         </Section>
 
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-5">
           <SummaryCard
             title={subject === "consultants" ? t("pages.worker_stats.total_rows") : t("pages.worker_stats.total_leads")}
             value={totalQty}
@@ -244,6 +248,16 @@ export default function WorkerStatisticsPage() {
           <SummaryCard
             title={subject === "consultants" ? t("pages.worker_stats.top_consultant") : t("pages.worker_stats.top_lead_worker")}
             value={topWorker}
+          />
+          <SummaryCard
+            title={t("pages.worker_stats.data_source")}
+            value={
+              loadedVia === "local"
+                ? t("pages.worker_stats.source_local")
+                : loadedVia === "online"
+                ? t("pages.worker_stats.source_online")
+                : "-"
+            }
           />
         </div>
 
