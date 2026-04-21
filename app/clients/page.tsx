@@ -3,10 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { PageShell } from "@/components/page-shell";
 import { onlineApi } from "@/lib/api-online";
-import { localApi } from "@/lib/api-local";
 import { useLanguage } from "@/components/language-provider";
 
-const CLIENT_IMPORT_JOB_KEY = "rapidone_clients_import_job_id";
 const PAGE_SIZE = 20;
 
 type ClientRow = {
@@ -24,26 +22,14 @@ type ClientsResponse = {
   clients: ClientRow[];
 };
 
-type ImportStatus = {
-  ok: boolean;
-  job_id: string;
-  status: "queued" | "running" | "done" | "error";
-  progress_lines: string[];
-  scraped_count: number;
-  current_page: number;
-  uploading_page: number;
-  created: number;
-  updated: number;
-  skipped: number;
-  error: string | null;
-  result: {
-    count: number;
-    created: number;
-    updated: number;
-    skipped: number;
-    pages: number;
-  } | null;
-};
+function getErrorMessage(err: unknown, fallback: string) {
+  const maybeError = err as {
+    message?: string;
+    response?: { data?: { detail?: string } };
+  };
+  const detail = maybeError?.response?.data?.detail;
+  return typeof detail === "string" ? detail : maybeError?.message || fallback;
+}
 
 function SummaryCard({
   title,
@@ -145,12 +131,7 @@ export default function ClientsPage() {
   const [data, setData] = useState<ClientsResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const [importJobId, setImportJobId] = useState("");
-  const [importStatus, setImportStatus] = useState<ImportStatus | null>(null);
-  const [importing, setImporting] = useState(false);
-
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [page, setPage] = useState(1);
 
   async function loadClients(q?: string) {
@@ -164,9 +145,8 @@ export default function ClientsPage() {
 
       setData(res.data);
       setPage(1);
-    } catch (err: any) {
-      const detail = err?.response?.data?.detail;
-      setError(typeof detail === "string" ? detail : err?.message || t("pages.clients.load_failed"));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, t("pages.clients.load_failed")));
     } finally {
       setLoading(false);
     }
@@ -177,114 +157,11 @@ export default function ClientsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const savedJobId = localStorage.getItem(CLIENT_IMPORT_JOB_KEY);
-    if (savedJobId) {
-      setImportJobId(savedJobId);
-      setImporting(true);
-    }
-  }, []);
-
   async function handleSearch() {
     await loadClients(search.trim());
   }
 
-  async function handleImportStart() {
-    try {
-      setImporting(true);
-      setError("");
-      setSuccess("");
-      setImportStatus(null);
-      setImportJobId("");
-
-      const res = await localApi.post("/clients-import/start");
-      const jobId = res.data?.job_id;
-
-      if (!jobId) {
-        throw new Error(t("pages.clients.no_job_id"));
-      }
-
-      setImportJobId(jobId);
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem(CLIENT_IMPORT_JOB_KEY, jobId);
-      }
-    } catch (err: any) {
-      setImporting(false);
-      const detail = err?.response?.data?.detail;
-      setError(typeof detail === "string" ? detail : err?.message || t("pages.clients.import_start_failed"));
-    }
-  }
-
-  useEffect(() => {
-    if (!importJobId) return;
-
-    const timer = setInterval(async () => {
-      try {
-        const res = await localApi.get<ImportStatus>("/clients-import/status", {
-          params: { job_id: importJobId },
-        });
-
-        const payload = res.data;
-        setImportStatus(payload);
-
-        if (payload.status === "done") {
-          clearInterval(timer);
-          setImporting(false);
-
-          if (typeof window !== "undefined") {
-            localStorage.removeItem(CLIENT_IMPORT_JOB_KEY);
-          }
-
-          setSuccess(
-            t("pages.clients.import_finished")
-              .replace("{count}", String(payload.result?.count ?? 0))
-              .replace("{created}", String(payload.result?.created ?? 0))
-              .replace("{updated}", String(payload.result?.updated ?? 0))
-              .replace("{skipped}", String(payload.result?.skipped ?? 0))
-          );
-
-          await loadClients(search.trim());
-        }
-
-        if (payload.status === "error") {
-          clearInterval(timer);
-          setImporting(false);
-
-          if (typeof window !== "undefined") {
-            localStorage.removeItem(CLIENT_IMPORT_JOB_KEY);
-          }
-
-          setError(payload.error || t("pages.clients.import_failed"));
-        }
-      } catch (err: any) {
-        clearInterval(timer);
-        setImporting(false);
-
-        const detail = err?.response?.data?.detail;
-        setError(typeof detail === "string" ? detail : err?.message || t("pages.clients.import_status_failed"));
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [importJobId, search, t]);
-
-  const clients = data?.clients ?? [];
-
-  const importPercent = useMemo(() => {
-    if (!importStatus) return 0;
-    if (importStatus.status === "done" || importStatus.status === "error") return 100;
-
-    const currentPage = Number(importStatus.current_page || 0);
-    const uploadedPage = Number(importStatus.uploading_page || 0);
-
-    if (uploadedPage > 0) return Math.min(99, uploadedPage);
-    if (currentPage > 0) return Math.min(99, currentPage);
-
-    return 0;
-  }, [importStatus]);
+  const clients = useMemo(() => data?.clients ?? [], [data]);
 
   const totalPages = Math.max(1, Math.ceil(clients.length / PAGE_SIZE));
 
@@ -299,12 +176,6 @@ export default function ClientsPage() {
         {error ? (
           <div className="rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
             {error}
-          </div>
-        ) : null}
-
-        {success ? (
-          <div className="rounded-2xl border border-[var(--success-border)] bg-[var(--success-bg)] px-4 py-3 text-sm text-[var(--success-text)]">
-            {success}
           </div>
         ) : null}
 
@@ -329,89 +200,13 @@ export default function ClientsPage() {
               >
                 {loading ? t("pages.clients.searching") : t("common.search")}
               </button>
-
-              <button
-                onClick={handleImportStart}
-                disabled={importing}
-                className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:opacity-60"
-              >
-                {importing ? t("pages.clients.running_import") : t("pages.clients.import_active")}
-              </button>
             </div>
           </div>
         </Section>
 
-        <div className="grid gap-4 md:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-1">
           <SummaryCard title={t("pages.clients.clients_in_db")} value={data?.count ?? 0} />
-          <SummaryCard title={t("pages.clients.scraped_count")} value={importStatus?.scraped_count ?? 0} />
-          <SummaryCard title={t("pages.clients.current_page")} value={importStatus?.current_page ?? 0} />
-          <SummaryCard title={t("pages.clients.uploading_page")} value={importStatus?.uploading_page ?? 0} />
-          <SummaryCard
-            title={t("pages.clients.created_updated")}
-            value={`${importStatus?.created ?? 0} / ${importStatus?.updated ?? 0}`}
-          />
         </div>
-
-        {importJobId ? (
-          <Section
-            title={t("pages.clients.import_progress")}
-            description={t("pages.clients.import_progress_desc")}
-          >
-            <div className="mb-4 flex items-center justify-between gap-4">
-              <div />
-              <div
-                className={`rounded-2xl px-4 py-2 text-sm font-medium ${
-                  importStatus?.status === "done"
-                    ? "bg-emerald-50 text-emerald-700"
-                    : importStatus?.status === "error"
-                    ? "bg-red-50 text-red-700"
-                    : "bg-[var(--card-soft)] text-[var(--primary-dark)]"
-                }`}
-              >
-                {importStatus?.status || "queued"}
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <div className="mb-2 flex items-center justify-between text-sm text-[var(--muted-strong)]">
-                <span>{t("pages.daily.progress")}</span>
-                <span>{importStatus?.status === "done" ? "100%" : `${importPercent}%`}</span>
-              </div>
-
-              <div className="h-3 w-full rounded-full bg-[var(--accent)]">
-                <div
-                  className={`h-3 rounded-full transition-all ${
-                    importStatus?.status === "done"
-                      ? "bg-emerald-500"
-                      : importStatus?.status === "error"
-                      ? "bg-red-500"
-                      : "bg-[var(--primary-strong)]"
-                  }`}
-                  style={{
-                    width:
-                      importStatus?.status === "done"
-                        ? "100%"
-                        : `${Math.max(4, Math.min(importPercent, 99))}%`,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="overflow-hidden rounded-2xl border border-[var(--border)]">
-              <div className="max-h-80 overflow-y-auto bg-[var(--card-soft)] px-4 py-3">
-                <div className="space-y-2 text-sm text-[var(--foreground)]">
-                  {(importStatus?.progress_lines ?? []).length === 0 ? (
-                    <div>{t("pages.clients.no_progress")}</div>
-                  ) : (
-                    importStatus?.progress_lines.map((line, idx) => (
-                      <div key={idx}>{line}</div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          </Section>
-        ) : null}
 
         <Section
           title={t("pages.clients.table_title")}
