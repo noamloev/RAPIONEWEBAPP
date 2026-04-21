@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { PageShell } from "@/components/page-shell";
 import { onlineApi } from "@/lib/api-online";
-import { localApi } from "@/lib/api-local";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { useLanguage } from "@/components/language-provider";
 
@@ -89,7 +88,7 @@ export default function WorkerStatisticsPage() {
     setSelectedWorker(firstWorker);
   }
 
-  async function refreshFromLocal() {
+  async function refresh() {
     try {
       setLoading(true);
       setError("");
@@ -98,28 +97,6 @@ export default function WorkerStatisticsPage() {
       const [yearStr, monStr] = month.split("-");
       const year = Number(yearStr);
       const mon = Number(monStr);
-      const res = await localApi.get<WorkerMonthlyStatsResponse>("/worker-stats/monthly", {
-        params: { year, month: mon, subject },
-      });
-      applyPayload(res.data, "local");
-    } catch (err: any) {
-      const detail = err?.response?.data?.detail;
-      setError(typeof detail === "string" ? detail : err?.message || t("pages.worker_stats.load_failed"));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function refreshFromOnlineTest() {
-    try {
-      setLoading(true);
-      setError("");
-      setSuccess("");
-
-      const [yearStr, monStr] = month.split("-");
-      const year = Number(yearStr);
-      const mon = Number(monStr);
-
       const res = await onlineApi.get<WorkerMonthlyStatsResponse>("/worker-stats/monthly", {
         params: { year, month: mon, subject },
       });
@@ -214,19 +191,11 @@ export default function WorkerStatisticsPage() {
               </div>
 
               <button
-                onClick={refreshFromLocal}
-                disabled={loading}
-                className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? t("common.refreshing") : t("pages.worker_stats.get_button")}
-              </button>
-
-              <button
-                onClick={refreshFromOnlineTest}
+                onClick={refresh}
                 disabled={loading}
                 className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? t("pages.worker_stats.test_running") : t("pages.worker_stats.test_button")}
+                {loading ? t("pages.worker_stats.test_running") : t("pages.worker_stats.get_button")}
               </button>
             </div>
           </div>
