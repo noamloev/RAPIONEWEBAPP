@@ -1,12 +1,9 @@
 "use client";
 
-import { Bell, Search, Sparkles, Download } from "lucide-react";
-import { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { Bell, Search, Sparkles } from "lucide-react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import { onlineApi } from "@/lib/api-online";
 import { useLanguage } from "@/components/language-provider";
-import { LATEST_AGENT_VERSION, AGENT_INSTALLER_URL } from "@/lib/agent-version";
-import { compareVersions } from "@/lib/utils";
 import { getLocalAlerts, markLocalAlertRead, type LocalAlert } from "@/lib/local-alerts";
 
 type ServerAlert = {
@@ -23,59 +20,10 @@ type UnifiedAlert =
   | { source: "local"; data: LocalAlert };
 
 export function AppHeader({ title, centerContent }: { title: string; centerContent?: ReactNode }) {
-  const [localStatus, setLocalStatus] = useState<"checking" | "online" | "offline">("checking");
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [alerts, setAlerts] = useState<ServerAlert[]>([]);
   const [localAlerts, setLocalAlerts] = useState<LocalAlert[]>([]);
   const { t, dir } = useLanguage();
-  const [agentVersion, setAgentVersion] = useState<string>("");
-  const [agentNeedsUpdate, setAgentNeedsUpdate] = useState(false);
-
-  async function checkLocalServer() {
-  try {
-    const healthRes = await fetch("http://127.0.0.1:8000/health", {
-      method: "GET",
-    });
-
-    if (!healthRes.ok) {
-      setLocalStatus("offline");
-      setAgentVersion("");
-      setAgentNeedsUpdate(false);
-      return;
-    }
-
-    setLocalStatus("online");
-
-    try {
-      const versionRes = await fetch("http://127.0.0.1:8000/version", {
-        method: "GET",
-      });
-
-      if (versionRes.ok) {
-        const versionData = await versionRes.json();
-        const localVersion = String(versionData?.version || "").trim();
-
-        setAgentVersion(localVersion);
-
-        if (localVersion) {
-          setAgentNeedsUpdate(compareVersions(localVersion, LATEST_AGENT_VERSION) < 0);
-        } else {
-          setAgentNeedsUpdate(false);
-        }
-      } else {
-        setAgentVersion("");
-        setAgentNeedsUpdate(false);
-      }
-    } catch {
-      setAgentVersion("");
-      setAgentNeedsUpdate(false);
-    }
-  } catch {
-    setLocalStatus("offline");
-    setAgentVersion("");
-    setAgentNeedsUpdate(false);
-  }
-}
 
   async function loadAlerts() {
     try {
@@ -113,16 +61,13 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
   }
 
   useEffect(() => {
-    checkLocalServer();
     loadAlerts();
     refreshLocalAlerts();
 
     const interval = setInterval(() => {
-      checkLocalServer();
       loadAlerts();
     }, 5000);
 
-    // Listen for local alerts added from other parts of the app
     window.addEventListener("rapidone-alerts-changed", refreshLocalAlerts);
 
     return () => {
@@ -130,10 +75,6 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
       window.removeEventListener("rapidone-alerts-changed", refreshLocalAlerts);
     };
   }, []);
-
-  function downloadLocalServer() {
-    window.open(AGENT_INSTALLER_URL, "_blank");
-  }
 
   const unreadCount = useMemo(
     () =>
@@ -188,36 +129,6 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
             {t("header.company_id")}: 1
           </div>
 
-          {localStatus === "online" ? (
-  agentNeedsUpdate ? (
-    <button
-      onClick={downloadLocalServer}
-      className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100"
-    >
-      <Download className="h-4 w-4" />
-      {t("header.update_agent")}
-      {agentVersion ? ` (${agentVersion} → ${LATEST_AGENT_VERSION})` : ""}
-    </button>
-  ) : (
-    <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
-      🟢 {t("header.connected")}
-      {agentVersion ? ` ${agentVersion}` : ""}
-    </div>
-  )
-) : localStatus === "offline" ? (
-  <button
-    onClick={downloadLocalServer}
-    className="flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
-  >
-    <Download className="h-4 w-4" />
-    {t("header.download_agent")}
-  </button>
-) : (
-  <div className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm">
-    {t("header.checking")}
-  </div>
-)}
-
           <div className="relative">
             <button
               onClick={() => setAlertsOpen((v) => !v)}
@@ -266,7 +177,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
                               <div className="text-sm font-semibold text-rose-950">
                                 {alert.title}
                               </div>
-                              <div className="mt-1 text-sm text-rose-700 break-words">
+                              <div className="mt-1 break-words text-sm text-rose-700">
                                 {alert.message}
                               </div>
                               <div className="mt-2 text-xs text-rose-400">
@@ -314,4 +225,3 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
     </header>
   );
 }
-

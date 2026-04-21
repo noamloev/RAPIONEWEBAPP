@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { PageShell } from "@/components/page-shell";
 import { onlineApi } from "@/lib/api-online";
-import { localApi } from "@/lib/api-local";
 import {
   Branch,
   DailyRunStatus,
@@ -12,7 +11,6 @@ import {
   InventoryHistoryRow,
   SaleRow,
 } from "@/lib/types";
-import { addLocalAlert } from "@/lib/local-alerts";
 import { useLanguage } from "@/components/language-provider";
 
 function formatDateForApi(date: string) {
@@ -61,11 +59,6 @@ function LuxuryInputClass() {
 export default function DailyReportPage() {
   const { t } = useLanguage();
   const today = new Date().toISOString().slice(0, 10);
-
-  const [receiptsJobId, setReceiptsJobId] = useState("");
-  const [dailyJobId, setDailyJobId] = useState<string>("");
-  const [dailyJobStatus, setDailyJobStatus] = useState<string>("");
-  const [dailyProgressLines, setDailyProgressLines] = useState<string[]>([]);
 
   const [dateStr, setDateStr] = useState(today);
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -247,96 +240,6 @@ export default function DailyReportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateStr, selectedBranch]);
 
-  // Receipts polling
-  useEffect(() => {
-    if (!receiptsJobId) return;
-    const timer = setInterval(async () => {
-      try {
-        const res = await localApi.get("/local/check-receipts/status", {
-          params: { job_id: receiptsJobId },
-        });
-        const data = res.data;
-        if (!data?.ok) return;
-        if (data.status === "done") {
-          clearInterval(timer);
-          setCheckingReceipts(false);
-          const result = data.result;
-          const missingReceiptCount = result?.missing_receipt?.length ?? 0;
-          const missingInvoiceCount = result?.missing_invoice?.length ?? 0;
-          const mismatchCount = result?.mismatch?.length ?? 0;
-          addLocalAlert({
-            level: missingReceiptCount > 0 || missingInvoiceCount > 0 || mismatchCount > 0 ? "warn" : "success",
-            title: t("pages.daily.receipts_finished_title").replace("{date}", result?.date_str ?? ""),
-            message:
-              `${t("pages.daily.receipts_summary_invoices")}: ${result?.grand_inv ?? 0}, ` +
-              `${t("pages.daily.receipts_summary_receipts")}: ${result?.grand_rec ?? 0}, ` +
-              `${t("pages.daily.receipts_summary_diff")}: ${result?.grand_diff ?? 0}. ` +
-              `${t("pages.daily.receipts_summary_missing_receipt")}: ${missingReceiptCount}, ` +
-              `${t("pages.daily.receipts_summary_missing_invoice")}: ${missingInvoiceCount}, ` +
-              `${t("pages.daily.receipts_summary_mismatch")}: ${mismatchCount}.`,
-          });
-          setSuccessMessage(t("pages.daily.receipts_finished_success"));
-        }
-        if (data.status === "error") {
-          clearInterval(timer);
-          setCheckingReceipts(false);
-          addLocalAlert({ level: "error", title: t("pages.daily.receipts_failed_title"), message: data.error || t("pages.daily.receipts_failed_unknown") });
-          setError(data.error || t("pages.daily.receipts_failed"));
-        }
-      } catch (err: unknown) {
-        clearInterval(timer);
-        setCheckingReceipts(false);
-        const e = err as { response?: { data?: { detail?: string } }; message?: string };
-        setError(e?.response?.data?.detail || e?.message || t("pages.daily.receipts_status_failed"));
-      }
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [receiptsJobId, t]);
-
-  // Daily job polling
-  useEffect(() => {
-    if (!dailyJobId) return;
-    const timer = setInterval(async () => {
-      try {
-        const res = await localApi.get("/ensure/daily/status", {
-          params: { job_id: dailyJobId },
-        });
-        const data = res.data;
-        if (!data?.ok) return;
-        setDailyJobStatus(data.status || "");
-        setDailyProgressLines(data.progress_lines || []);
-        if (data.status === "done") {
-          clearInterval(timer);
-          setRunningDaily(false);
-          setSuccessMessage(t("pages.daily.run_completed"));
-          // Optimistically mark the selected date as GREEN for past dates —
-          // the server confirms this on the next refresh.
-          const todayStr = new Date().toISOString().slice(0, 10);
-          if (dateStr < todayStr) {
-            setRunStatuses((prev) => {
-              const rest = prev.filter((r) => r.date !== dateStr);
-              return [...rest, { date: dateStr, status: "GREEN" }].sort((a, b) =>
-                a.date.localeCompare(b.date)
-              );
-            });
-          }
-          await refreshAll();
-        }
-        if (data.status === "error") {
-          clearInterval(timer);
-          setRunningDaily(false);
-          setError(data.error || t("pages.daily.run_failed"));
-        }
-      } catch (err: unknown) {
-        clearInterval(timer);
-        setRunningDaily(false);
-        const e = err as { response?: { data?: { detail?: string } }; message?: string };
-        setError(e?.response?.data?.detail || e?.message || t("pages.daily.status_failed"));
-      }
-    }, 1000);
-    return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dailyJobId, t]);
 
   const [forceRunning, setForceRunning] = useState(false);
 
@@ -517,24 +420,6 @@ export default function DailyReportPage() {
     const found = runStatuses.find((r) => r.date === dateStr);
     return found?.status || "NONE";
   }, [runStatuses, dateStr]);
-
-  // Progress: use row-based percent if available, else indeterminate when running
-  const progressPercent = useMemo(() => {
-    if (dailyJobStatus === "done" || dailyJobStatus === "error") return 100;
-    const rowLine = [...dailyProgressLines]
-      .reverse()
-      .find((line) => line.toLowerCase().includes("processing excel row"));
-    if (!rowLine) return dailyJobStatus === "running" ? -1 : 0; // -1 = indeterminate
-    const match = rowLine.match(/processing excel row\s+(\d+)\/(\d+)/i);
-    if (!match) return -1;
-    const current = Number(match[1]);
-    const total = Number(match[2]);
-    if (!total) return -1;
-    return Math.min(99, Math.round((current / total) * 100));
-  }, [dailyProgressLines, dailyJobStatus]);
-
-  // Last few progress lines for live log
-  const recentLines = useMemo(() => dailyProgressLines.slice(-6), [dailyProgressLines]);
 
   const statusLabel =
     selectedDateRunStatus === "GREEN"

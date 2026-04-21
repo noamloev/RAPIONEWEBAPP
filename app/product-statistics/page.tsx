@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { PageShell } from "@/components/page-shell";
 import { onlineApi } from "@/lib/api-online";
-import { localApi } from "@/lib/api-local";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { useLanguage } from "@/components/language-provider";
 
@@ -72,35 +71,13 @@ export default function ProductStatisticsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [loadedVia, setLoadedVia] = useState<"local" | "online" | "">("");
+  const [loadedVia, setLoadedVia] = useState<"online" | "">("");
 
-  function applyPayload(payload: MonthlyStatsResponse, via: "local" | "online") {
+  function applyPayload(payload: MonthlyStatsResponse, via: "online") {
     setData(payload);
     setLoadedVia(via);
     const firstCategory = payload?.categories?.[0]?.category_name || "";
     setSelectedCategory(firstCategory);
-  }
-
-  async function loadMonthlyStatsFromLocal() {
-    try {
-      setLoading(true);
-      setError("");
-      setSuccess("");
-
-      const [yearStr, monStr] = month.split("-");
-      const year = Number(yearStr);
-      const mon = Number(monStr);
-
-      const res = await localApi.get<MonthlyStatsResponse>("/stats/monthly", {
-        params: { year, month: mon },
-      });
-      applyPayload(res.data, "local");
-    } catch (err: any) {
-      const detail = err?.response?.data?.detail;
-      setError(typeof detail === "string" ? detail : err?.message || t("pages.product_stats.load_failed"));
-    } finally {
-      setLoading(false);
-    }
   }
 
   async function loadMonthlyStatsFromOnline() {
@@ -210,9 +187,7 @@ export default function ProductStatisticsPage() {
           <SummaryCard
             title={t("pages.product_stats.data_source")}
             value={
-              loadedVia === "local"
-                ? t("pages.product_stats.source_local")
-                : loadedVia === "online"
+              loadedVia === "online"
                 ? t("pages.product_stats.source_online")
                 : "-"
             }

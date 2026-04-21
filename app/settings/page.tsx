@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { clearAuth } from "@/lib/auth";
 import { PageShell } from "@/components/page-shell";
 import { onlineApi } from "@/lib/api-online";
-import { localApi } from "@/lib/api-local";
 import { useLanguage } from "@/components/language-provider";
 
 type SettingsPayload = {
@@ -27,6 +26,8 @@ type SettingsPayload = {
   daily_report_days: number[];
   receipts_check_time: string;
   receipts_check_days: number[];
+  clients_sync_time: string;
+  clients_sync_days: number[];
 };
 
 type WorkerRow = {
@@ -96,6 +97,8 @@ const DEFAULT_SETTINGS: SettingsPayload = {
   daily_report_days: [0, 1, 2, 3, 4],
   receipts_check_time: "22:00",
   receipts_check_days: [0, 1, 2, 3, 4],
+  clients_sync_time: "21:00",
+  clients_sync_days: [0, 1, 2, 3, 4],
 };
 
 const WEEKDAY_OPTIONS = [
@@ -126,26 +129,39 @@ function WorkerToggle({
   label,
   checked,
   onChange,
+  onRemove,
 }: {
   label: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
+  onRemove?: () => void;
 }) {
   return (
-    <label
-      className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition ${
+    <div
+      className={`flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm transition ${
         checked
           ? "border-[var(--border-strong)] bg-[linear-gradient(180deg,#fff8fb_0%,#f8e7ef_100%)] text-[var(--primary-deep)]"
           : "border-[var(--border)] bg-[var(--card-soft)] text-[var(--primary-dark)]"
       }`}
     >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-      />
-      <span>{label}</span>
-    </label>
+      <label className="flex items-center gap-3">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+        />
+        <span>{label}</span>
+      </label>
+      {onRemove ? (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100"
+        >
+          {`Delete`}
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -335,6 +351,8 @@ export default function SettingsPage() {
   const [syncingFollowUp, setSyncingFollowUp] = useState(false);
   const [syncingInventoryAlerts, setSyncingInventoryAlerts] = useState(false);
   const [deletingAlerts, setDeletingAlerts] = useState(false);
+  const [deletingWorkerId, setDeletingWorkerId] = useState<number | null>(null);
+  const [discoveringDbName, setDiscoveringDbName] = useState(false);
   const [importingClients, setImportingClients] = useState(false);
   const [inventoryAlertThreshold, setInventoryAlertThreshold] = useState(25);
   const [clientsImportJobId, setClientsImportJobId] = useState("");
@@ -495,7 +513,7 @@ export default function SettingsPage() {
       setError("");
       setSuccess("");
 
-      await localApi.post("/workers-local/sync-from-rapidone");
+      await onlineApi.post("/workers/sync-from-rapidone");
       await loadSettings();
       setSuccess(t("settings.workers_synced"));
     } catch (err: unknown) {
@@ -511,15 +529,63 @@ export default function SettingsPage() {
       setError("");
       setSuccess("");
 
-      await localApi.post("/follow-up-local/sync-history", null, {
+      const res = await onlineApi.post<{ ok: boolean; activities_found: number; online_result?: { created?: number } }>(
+        "/clients/follow-up-sync-history",
+        null,
+        {
         params: { days: settings.follow_up_inactive_days },
-      });
+        }
+      );
 
-      setSuccess(t("settings.follow_up_sync_started"));
+      setSuccess(
+        `${t("settings.follow_up_sync_started")} ${res.data?.activities_found ?? 0}`
+      );
     } catch (err: unknown) {
       setError(getErrorMessage(err, t("settings.sync_follow_up_failed")));
     } finally {
       setSyncingFollowUp(false);
+    }
+  }
+
+  async function deleteWorker(worker: WorkerRow) {
+    try {
+      setDeletingWorkerId(worker.id);
+      setError("");
+      setSuccess("");
+      await onlineApi.delete(`/workers/${worker.id}`);
+      setSettings((prev) => ({
+        ...prev,
+        consultant_names: prev.consultant_names.filter((name) => name !== worker.worker_name),
+        lead_agent_names: prev.lead_agent_names.filter((name) => name !== worker.worker_name),
+      }));
+      setWorkers((prev) => prev.filter((row) => row.id !== worker.id));
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to delete worker"));
+    } finally {
+      setDeletingWorkerId(null);
+    }
+  }
+
+  async function updateRapidOneDbName() {
+    try {
+      setDiscoveringDbName(true);
+      setError("");
+      setSuccess("");
+      const res = await onlineApi.post<{ rapidone_db_name: string }>(
+        "/settings/rapidone-db-name/discover",
+        {
+          rapidone_base_url: settings.rapidone_base_url,
+          rapidone_username: settings.rapidone_username,
+          rapidone_password: settings.rapidone_password,
+          save_result: true,
+        }
+      );
+      updateSettings({ rapidone_db_name: res.data?.rapidone_db_name || "" });
+      setSuccess(`RapidOne DB name updated: ${res.data?.rapidone_db_name || ""}`);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to update RapidOne DB name"));
+    } finally {
+      setDiscoveringDbName(false);
     }
   }
 
@@ -911,6 +977,11 @@ export default function SettingsPage() {
                         onChange={(checked) =>
                           toggleName("consultant_names", worker.worker_name, checked)
                         }
+                        onRemove={
+                          deletingWorkerId === worker.id
+                            ? undefined
+                            : () => deleteWorker(worker)
+                        }
                       />
                     ))
                   )}
@@ -934,6 +1005,11 @@ export default function SettingsPage() {
                         checked={settings.lead_agent_names.includes(worker.worker_name)}
                         onChange={(checked) =>
                           toggleName("lead_agent_names", worker.worker_name, checked)
+                        }
+                        onRemove={
+                          deletingWorkerId === worker.id
+                            ? undefined
+                            : () => deleteWorker(worker)
                         }
                       />
                     ))
@@ -1023,11 +1099,27 @@ export default function SettingsPage() {
               value={settings.rapidone_password}
               onChange={(value) => updateSettings({ rapidone_password: value })}
             />
-            <TextInput
-              label={t("settings.rapidone_db_name")}
-              value={settings.rapidone_db_name}
-              onChange={(value) => updateSettings({ rapidone_db_name: value })}
-            />
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[var(--primary-dark)]">
+                {t("settings.rapidone_db_name")}
+              </label>
+              <input
+                type="text"
+                readOnly
+                value={settings.rapidone_db_name}
+                className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm text-[var(--muted-strong)] outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              onClick={updateRapidOneDbName}
+              disabled={discoveringDbName}
+              className="self-end rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:opacity-60"
+            >
+              {discoveringDbName ? "Updating..." : "Update DB Name"}
+            </button>
           </div>
         </Section>
       );
