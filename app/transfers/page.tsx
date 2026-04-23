@@ -10,18 +10,10 @@ import {
   SummaryCard,
 } from "@/components/ui-kit";
 import { onlineApi } from "@/lib/api-online";
+import { TransferRow } from "@/lib/types";
 import { useLanguage } from "@/components/language-provider";
 
 type Branch = { id: number; name: string };
-
-type TransferRow = {
-  id: string;
-  from_branch_name: string;
-  to_branch_name: string;
-  status: string;
-  created_at: string | null;
-  line_count: number;
-};
 
 const MOCK_TRANSFERS: TransferRow[] = [
   {
@@ -31,14 +23,19 @@ const MOCK_TRANSFERS: TransferRow[] = [
     status: "IN_TRANSIT",
     created_at: "2024-01-15T10:00:00",
     line_count: 3,
+    lines: [
+      { item_code: "SKU-1", item_name: "Serum", qty: 2 },
+      { item_code: "SKU-2", item_name: "Mask", qty: 1 },
+    ],
   },
   {
     id: "mock-2",
     from_branch_name: "Main Warehouse",
     to_branch_name: "Haifa Branch",
-    status: "DRAFT",
+    status: "RECEIVED",
     created_at: "2024-01-14T08:30:00",
     line_count: 1,
+    lines: [{ item_code: "SKU-3", item_name: "Cleanser", qty: 1 }],
   },
 ];
 
@@ -127,6 +124,7 @@ export default function TransfersPage() {
 
   const draftCount = rows.filter((r) => r.status === "DRAFT").length;
   const inTransitCount = rows.filter((r) => r.status === "IN_TRANSIT").length;
+  const receivedCount = rows.filter((r) => r.status === "RECEIVED").length;
 
   return (
     <PageShell title={t("pages.transfers.title")}>
@@ -139,18 +137,9 @@ export default function TransfersPage() {
 
         <div className="grid gap-4 md:grid-cols-4">
           <SummaryCard title={t("pages.transfers.total")} value={rows.length} />
-          <SummaryCard
-            title={t("pages.transfers.pending_draft")}
-            value={draftCount}
-          />
-          <SummaryCard
-            title={t("pages.transfers.in_transit")}
-            value={inTransitCount}
-          />
-          <SummaryCard
-            title={t("pages.transfers.filter_branch")}
-            value={selectedBranch || "—"}
-          />
+          <SummaryCard title={t("pages.transfers.pending_draft")} value={draftCount} />
+          <SummaryCard title={t("pages.transfers.in_transit")} value={inTransitCount} />
+          <SummaryCard title={t("pages.transfers.status_received")} value={receivedCount} />
         </div>
 
         <SectionCard
@@ -178,12 +167,9 @@ export default function TransfersPage() {
                 onChange={(e) => setSelectedStatus(e.target.value)}
               >
                 <option value="">{t("pages.transfers.all_statuses")}</option>
-                <option value="DRAFT">
-                  {t("pages.transfers.pending_draft")}
-                </option>
-                <option value="IN_TRANSIT">
-                  {t("pages.transfers.in_transit")}
-                </option>
+                <option value="DRAFT">{t("pages.transfers.pending_draft")}</option>
+                <option value="IN_TRANSIT">{t("pages.transfers.in_transit")}</option>
+                <option value="RECEIVED">{t("pages.transfers.status_received")}</option>
               </SelectInput>
             </div>
 
@@ -204,13 +190,14 @@ export default function TransfersPage() {
               t("table.to_branch"),
               t("table.status"),
               t("table.line_count"),
+              t("table.inventory_moved"),
               t("table.created_at"),
             ]}
           >
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-4 py-8 text-center text-sm text-[var(--muted)]"
                 >
                   {loading ? t("common.loading") : t("pages.transfers.empty")}
@@ -220,7 +207,7 @@ export default function TransfersPage() {
               rows.map((row) => (
                 <tr key={row.id} className="hover:bg-[var(--card-soft)]">
                   <td className="px-4 py-4 font-mono text-xs text-[var(--muted-strong)]">
-                    {row.id.slice(0, 8)}…
+                    {row.id.slice(0, 8)}...
                   </td>
                   <td className="px-4 py-4 text-sm text-[var(--foreground)]">
                     {row.from_branch_name}
@@ -237,10 +224,22 @@ export default function TransfersPage() {
                   <td className="px-4 py-4 text-sm text-[var(--foreground)]">
                     {row.line_count}
                   </td>
+                  <td className="px-4 py-4 text-sm text-[var(--foreground)]">
+                    <div className="space-y-1">
+                      {row.lines.length === 0 ? (
+                        <span className="text-[var(--muted)]">-</span>
+                      ) : (
+                        row.lines.map((line) => (
+                          <div key={`${row.id}-${line.item_code}`} className="text-xs leading-5">
+                            <span className="font-medium">{line.item_name}</span>{" "}
+                            <span className="text-[var(--muted)]">({line.item_code}) x{line.qty}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-4 text-sm text-[var(--muted)]">
-                    {row.created_at
-                      ? new Date(row.created_at).toLocaleDateString()
-                      : "—"}
+                    {row.created_at ? new Date(row.created_at).toLocaleDateString() : "-"}
                   </td>
                 </tr>
               ))

@@ -117,6 +117,13 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
     return alert.title.startsWith("Receipts check -");
   }
 
+  function getReceiptKindLabel(kind: ReceiptsAlertDetailRow["kind"]): string {
+    if (kind === "missing_receipt") return t("pages.daily.receipts_summary_missing_receipt");
+    if (kind === "missing_invoice") return t("pages.daily.receipts_summary_missing_invoice");
+    if (kind === "mismatch") return t("pages.daily.receipts_summary_mismatch");
+    return t("pages.daily.receipts_summary_diff");
+  }
+
   function refreshLocalAlerts() {
     setLocalAlerts(getLocalAlerts());
   }
@@ -194,7 +201,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
               <div className="flex w-full max-w-md items-center gap-3 rounded-full border border-[var(--border)] bg-white/90 px-4 py-2 shadow-[var(--shadow-card)]">
                 <Search className="h-4 w-4 text-[var(--muted)]" />
                 <input
-                  placeholder="Search pages, products, branches..."
+                  placeholder={t("header.search_placeholder")}
                   className="w-full border-none bg-transparent text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted)]"
                 />
               </div>
@@ -275,7 +282,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
                                   onClick={() => setSelectedReceiptsAlert(alert as ServerAlert)}
                                   className="shrink-0 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50"
                                 >
-                                  Full Details
+                                  {t("header.full_details")}
                                 </button>
                               ) : null}
 
@@ -291,7 +298,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
                                   }}
                                   className="shrink-0 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50"
                                 >
-                                  Mark read
+                                  {t("header.mark_read")}
                                 </button>
                               ) : null}
 
@@ -300,7 +307,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
                                   onClick={() => deleteServerAlert((alert as ServerAlert).id)}
                                   className="shrink-0 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50"
                                 >
-                                  Delete
+                                  {t("common.delete")}
                                 </button>
                               ) : null}
                             </div>
@@ -339,19 +346,19 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
 
             <div className="grid gap-4 border-b border-[var(--border)] bg-[var(--card-soft)] px-6 py-4 md:grid-cols-3">
               <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
-                <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">Missing receipt</div>
+                <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">{t("pages.daily.receipts_summary_missing_receipt")}</div>
                 <div className="mt-1 text-xl font-semibold text-[var(--primary-deep)]">
                   {selectedReceiptsParsed.details?.missing_receipt_count ?? 0}
                 </div>
               </div>
               <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
-                <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">Missing invoice</div>
+                <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">{t("pages.daily.receipts_summary_missing_invoice")}</div>
                 <div className="mt-1 text-xl font-semibold text-[var(--primary-deep)]">
                   {selectedReceiptsParsed.details?.missing_invoice_count ?? 0}
                 </div>
               </div>
               <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
-                <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">Mismatch</div>
+                <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">{t("pages.daily.receipts_summary_mismatch")}</div>
                 <div className="mt-1 text-xl font-semibold text-[var(--primary-deep)]">
                   {selectedReceiptsParsed.details?.mismatch_count ?? 0}
                 </div>
@@ -361,13 +368,13 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
             <div className="max-h-[46vh] overflow-auto px-6 py-5">
               {receiptsRows.length === 0 ? (
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-4 text-sm text-[var(--muted)]">
-                  No detailed client rows were saved for this alert. If the summary still shows a diff, rerun the receipts check for that date.
+                  {t("header.receipts_no_details")}
                 </div>
               ) : (
                 <table className="min-w-full divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-[var(--border)]">
                   <thead className="bg-[var(--card-soft)]">
                     <tr>
-                      {["Type", "Client", "Number", "Invoice", "Receipt", "Difference"].map((col) => (
+                      {[t("table.type"), t("table.customer"), t("table.number"), t("table.invoice"), t("pages.daily.receipts_summary_receipts"), t("pages.daily.receipts_summary_diff")].map((col) => (
                         <th
                           key={col}
                           className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]"
@@ -381,7 +388,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
                     {receiptsRows.map((row, index) => (
                       <tr key={`${row.kind}-${row.id}-${row.invoice_no}-${row.receipt_no}-${index}`}>
                         <td className="px-4 py-3 text-sm text-[var(--muted-strong)]">
-                          {row.kind.replaceAll("_", " ")}
+                          {getReceiptKindLabel(row.kind)}
                         </td>
                         <td className="px-4 py-3 text-sm font-medium text-[var(--primary-deep)]">
                           {row.client || "-"}
@@ -412,7 +419,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
                 onClick={() => setSelectedReceiptsAlert(null)}
                 className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)]"
               >
-                Close
+                {t("common.close")}
               </button>
               <button
                 onClick={async () => {
@@ -422,7 +429,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
                 }}
                 className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5"
               >
-                Mark read
+                {t("header.mark_read")}
               </button>
             </div>
           </div>

@@ -19,16 +19,6 @@ function formatDateForApi(date: string) {
 
 type ViewMode = "sales" | "flags" | "runs" | "inventory";
 
-type HttpTestRow = {
-  customer_name: string;
-  item_name: string;
-  total: number;
-  item_code: string;
-  branch_name: string;
-  invoice_no: string;
-  doc_date: string;
-  classification?: string;
-};
 
 function LuxuryCard({
   title,
@@ -59,11 +49,11 @@ function LuxuryInputClass() {
 export default function DailyReportPage() {
   const { t } = useLanguage();
   const today = new Date().toISOString().slice(0, 10);
+  const allBranchesValue = "__all_branches__";
 
   const [dateStr, setDateStr] = useState(today);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [selectedBranch, setSelectedBranch] = useState("All branches");
-  const [applyInventory, setApplyInventory] = useState(true);
+  const [selectedBranch, setSelectedBranch] = useState(allBranchesValue);
   const [selectedView, setSelectedView] = useState<ViewMode>("sales");
 
   const [summary, setSummary] = useState<DailySummary | null>(null);
@@ -78,15 +68,6 @@ export default function DailyReportPage() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const [httpTestLoading, setHttpTestLoading] = useState(false);
-  const [httpTestResult, setHttpTestResult] = useState<{
-    total_rows: number;
-    filtered_system_items: number;
-    rows: HttpTestRow[];
-  } | null>(null);
-  const [httpTestError, setHttpTestError] = useState("");
-
-  // Test: new direct-HTTP pipeline
   type RawRow = {
     doc_date: string;
     branch_name: string;
@@ -126,7 +107,7 @@ export default function DailyReportPage() {
   const [lastRanAt, setLastRanAt] = useState<string | null>(null);
 
   const allBranchesLabel = t("pages.daily.all_branches");
-  const branchParam = selectedBranch === allBranchesLabel ? undefined : selectedBranch;
+  const branchParam = selectedBranch === allBranchesValue ? undefined : selectedBranch;
 
   async function loadBranches() {
     try {
@@ -240,39 +221,6 @@ export default function DailyReportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateStr, selectedBranch]);
 
-
-  const [forceRunning, setForceRunning] = useState(false);
-
-  async function _runDaily(forceReclassify: boolean) {
-    const setLoaderFn = forceReclassify ? setForceRunning : setRunningDaily;
-    try {
-      setLoaderFn(true);
-      setError("");
-      setSuccessMessage("");
-      setTestRunResult(null);
-      setTestRunError("");
-
-      const res = await onlineApi.post("/rapidone/daily/run", null, {
-        params: {
-          date_str: dateStr,
-          ...(branchParam ? { branch: branchParam } : {}),
-          apply_inventory: applyInventory,
-          ...(forceReclassify ? { force_reclassify: true } : {}),
-        },
-      });
-      setTestRunResult(res.data);
-      setSuccessMessage(t("pages.daily.run_completed"));
-      await loadLastRanAt();
-      await Promise.all([loadSummary(), loadSales(), loadFlags(), loadRunStatuses()]);
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { detail?: string } }; message?: string };
-      setTestRunError(e?.response?.data?.detail || e?.message || t("pages.daily.run_failed"));
-      setError(e?.response?.data?.detail || e?.message || t("pages.daily.run_failed"));
-    } finally {
-      setLoaderFn(false);
-    }
-  }
-
   async function handleRunDaily() {
     try {
       setRunningDaily(true);
@@ -286,26 +234,15 @@ export default function DailyReportPage() {
         params: {
           date_str: dateStr,
           ...(branchParam ? { branch: branchParam } : {}),
-          apply_inventory: applyInventory,
+          apply_inventory: true,
         },
       });
       setTestRunResult(res.data);
       setSuccessMessage(t("pages.daily.run_completed"));
+      setSelectedView("inventory");
       await loadLastRanAt();
-      await Promise.all([loadSummary(), loadSales(), loadFlags(), loadRunStatuses()]);
+      await Promise.all([loadSummary(), loadSales(), loadFlags(), loadRunStatuses(), loadInventoryChanges()]);
 
-      // ── Local server fallback (keep as comment for emergency use) ─────────
-      // const res = await localApi.post("/ensure/daily/start", null, {
-      //   params: {
-      //     date_str: formatDateForApi(dateStr),
-      //     branch: branchParam || "all",
-      //     apply_inventory: applyInventory ? 1 : 0,
-      //   },
-      // });
-      // const jobId = res.data?.job_id;
-      // if (!jobId) throw new Error(t("pages.daily.no_job_id"));
-      // setDailyJobId(jobId);
-      // setDailyJobStatus("running");
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } }; message?: string };
       setTestRunError(e?.response?.data?.detail || e?.message || t("pages.daily.run_failed"));
@@ -342,23 +279,6 @@ export default function DailyReportPage() {
       setError(e?.response?.data?.detail || e?.message || t("pages.daily.receipts_failed"));
     } finally {
       setCheckingReceipts(false);
-    }
-  }
-
-  async function handleHttpTest() {
-    try {
-      setHttpTestLoading(true);
-      setHttpTestResult(null);
-      setHttpTestError("");
-      const res = await onlineApi.get("/rapidone/daily/test-http", {
-        params: { date_str: dateStr },
-      });
-      setHttpTestResult(res.data);
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { detail?: string } }; message?: string };
-      setHttpTestError(e?.response?.data?.detail || e?.message || "HTTP test failed");
-    } finally {
-      setHttpTestLoading(false);
     }
   }
 
@@ -476,7 +396,7 @@ export default function DailyReportPage() {
 
         {/* Filters & Actions */}
         <LuxuryCard title={t("pages.daily.filters_actions")} description={t("pages.daily.filters_actions_desc")}>
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-3">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-[var(--primary-dark)]">{t("pages.daily.date")}</label>
               <input
@@ -494,22 +414,11 @@ export default function DailyReportPage() {
                 onChange={(e) => setSelectedBranch(e.target.value)}
                 className={LuxuryInputClass()}
               >
-                <option value={allBranchesLabel}>{allBranchesLabel}</option>
+                <option value={allBranchesValue}>{allBranchesLabel}</option>
                 {branches.map((branch) => (
                   <option key={branch.id} value={branch.name}>{branch.name}</option>
                 ))}
               </select>
-            </div>
-
-            <div className="flex items-end">
-              <label className="flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm text-[var(--primary-dark)]">
-                <input
-                  type="checkbox"
-                  checked={applyInventory}
-                  onChange={(e) => setApplyInventory(e.target.checked)}
-                />
-                {t("pages.daily.apply_inventory")}
-              </label>
             </div>
 
             <div className="flex items-end justify-end text-sm">
@@ -530,18 +439,10 @@ export default function DailyReportPage() {
           <div className="mt-5 flex flex-wrap gap-3">
             <button
               onClick={handleRunDaily}
-              disabled={runningDaily || forceRunning}
+              disabled={runningDaily}
               className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {runningDaily ? t("pages.daily.running") : t("pages.daily.run_daily")}
-            </button>
-
-            <button
-              onClick={() => _runDaily(true)}
-              disabled={runningDaily || forceRunning}
-              className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {forceRunning ? t("pages.daily.running") : t("pages.daily.recheck_all")}
             </button>
 
             <button
@@ -562,62 +463,13 @@ export default function DailyReportPage() {
           </div>
 
 
-          {/* TEMP TEST SECTION - REMOVE BEFORE PROD */}
-          {/*<div className="mt-4 rounded-xl border-2 border-dashed border-yellow-400 bg-yellow-50 p-4">
-            <p className="mb-2 text-xs font-bold text-yellow-700">
-              ⚠ TEMP – REMOVE BEFORE PROD
-            </p>
-            <button
-              onClick={handleHttpTest}
-              disabled={httpTestLoading}
-              className="rounded-xl bg-yellow-500 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-600 disabled:opacity-50"
-            >
-              {httpTestLoading ? t("common.loading") : "🧪 Daily Report Test (HTTP)"}
-            </button>
-
-            {httpTestError && (
-              <p className="mt-2 text-sm text-red-600">{httpTestError}</p>
-            )}
-
-            {httpTestResult && (
-              <div className="mt-3">
-                <p className="text-sm text-gray-700">
-                  {t("pages.daily.httpTestTotalRows")}: <strong>{httpTestResult.total_rows}</strong>
-                  {" | "}
-                  {t("pages.daily.httpTestFiltered")}: <strong>{httpTestResult.filtered_system_items}</strong>
-                </p>
-                <div className="mt-2 overflow-x-auto">
-                  <table className="w-full text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-yellow-100">
-                        <th className="border border-yellow-300 px-2 py-1 text-left">{t("table.customerName")}</th>
-                        <th className="border border-yellow-300 px-2 py-1 text-left">{t("table.itemName")}</th>
-                        <th className="border border-yellow-300 px-2 py-1 text-right">{t("table.total")}</th>
-                        <th className="border border-yellow-300 px-2 py-1 text-left">{t("pages.daily.httpTestClassification")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {httpTestResult.rows.map((row: HttpTestRow, i: number) => (
-                        <tr key={i} className="hover:bg-yellow-50">
-                          <td className="border border-yellow-300 px-2 py-1">{row.customer_name}</td>
-                          <td className="border border-yellow-300 px-2 py-1">{row.item_name}</td>
-                          <td className="border border-yellow-300 px-2 py-1 text-right">{row.total}</td>
-                          <td className="border border-yellow-300 px-2 py-1">{row.classification ?? "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>*/}
         </LuxuryCard>
 
-        {/* Loading bar — shown while a run is in progress */}
-        {(runningDaily || forceRunning) ? (
+        {/* Loading bar shown while a run is in progress */}
+        {runningDaily ? (
           <div className="rounded-[30px] border border-[var(--border)] bg-white/88 px-6 py-4 shadow-[var(--shadow-card)]">
             <div className="mb-2 flex items-center justify-between text-sm text-[var(--muted-strong)]">
-              <span>{forceRunning ? t("pages.daily.recheck_all") : t("pages.daily.run_daily")} — {t("pages.daily.running")}</span>
+              <span>{t("pages.daily.run_daily")} - {t("pages.daily.running")}</span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--accent)]">
               <div
@@ -737,7 +589,7 @@ export default function DailyReportPage() {
                   <tr>
                     {[
                       t("table.severity"), t("table.date"), t("table.branch"),
-                      t("table.item"), t("table.invoice"), t("table.reason"),
+                      t("table.item"), t("table.customer"), t("table.invoice"), t("table.reason"),
                     ].map((col) => (
                       <th key={col} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">
                         {col}
@@ -748,7 +600,7 @@ export default function DailyReportPage() {
                 <tbody className="divide-y divide-[var(--border)] bg-white">
                   {flags.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
+                      <td colSpan={7} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
                         {loading ? t("common.loading") : t("pages.daily.no_flags")}
                       </td>
                     </tr>
@@ -770,6 +622,7 @@ export default function DailyReportPage() {
                         </td>
                         <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{flag.branch || "-"}</td>
                         <td className="px-4 py-4 text-sm text-[var(--foreground)]">{flag.item_name || "-"}</td>
+                        <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{flag.customer_name || "-"}</td>
                         <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{flag.invoice_no || "-"}</td>
                         <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{flag.reason}</td>
                       </tr>

@@ -45,11 +45,28 @@ export type FlagRow = {
   branch?: string | null;
   item_name?: string | null;
   invoice_no?: string | null;
+  customer_name?: string | null;
   reason: string;
   severity: string;
   expected_unit_price?: number | null;
   actual_unit_price?: number | null;
   line_key?: string | null;
+};
+
+export type TransferLineRow = {
+  item_code: string;
+  item_name: string;
+  qty: number;
+};
+
+export type TransferRow = {
+  id: string;
+  from_branch_name: string;
+  to_branch_name: string;
+  status: string;
+  created_at?: string | null;
+  line_count: number;
+  lines: TransferLineRow[];
 };
 
 export type DailyRunStatus = {

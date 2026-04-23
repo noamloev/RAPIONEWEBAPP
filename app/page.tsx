@@ -1,19 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
-  ArrowRight,
   BadgeDollarSign,
-  Boxes,
   Clock3,
   FileBarChart2,
-  PhoneCall,
   RefreshCw,
-  Settings,
   ShieldAlert,
-  Users,
 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { onlineApi } from "@/lib/api-online";
@@ -67,21 +61,6 @@ type InactiveClientsResponse = {
   clients: InactiveClientRow[];
 };
 
-type InventoryHistoryRow = {
-  action_group_id: string;
-  created_at: string | null;
-  change_type: string;
-  source: string;
-  branch_name: string;
-  product_code: string;
-  product_name: string;
-  old_qty: number;
-  new_qty: number;
-  qty_delta: number;
-  related_branch_name: string | null;
-  is_reverted: boolean;
-};
-
 type SettingsSnapshot = {
   follow_up_inactive_days: number;
   daily_report_schedule_mode: "single" | "range";
@@ -102,7 +81,6 @@ type DashboardState = {
   alerts: AlertRow[];
   latestRun: DailyRunLatest | null;
   inactive: InactiveClientsResponse | null;
-  history: InventoryHistoryRow[];
   settings: SettingsSnapshot | null;
 };
 
@@ -112,7 +90,6 @@ const EMPTY_STATE: DashboardState = {
   alerts: [],
   latestRun: null,
   inactive: null,
-  history: [],
   settings: null,
 };
 
@@ -170,37 +147,6 @@ function Panel({
   );
 }
 
-function ActionLink({
-  href,
-  title,
-  description,
-  icon: Icon,
-}: {
-  href: string;
-  title: string;
-  description: string;
-  icon: typeof FileBarChart2;
-}) {
-  return (
-    <Link
-      href={href}
-      className="group rounded-3xl border border-[var(--border)] bg-[var(--card-soft)] p-4 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[var(--shadow-soft)]"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[var(--primary-dark)] shadow-sm">
-            <Icon className="h-5 w-5" />
-          </div>
-          <p className="mt-4 text-base font-semibold text-[var(--primary-deep)]">{title}</p>
-          <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
-        </div>
-
-        <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[var(--muted)] transition group-hover:text-[var(--primary-dark)]" />
-      </div>
-    </Link>
-  );
-}
-
 export default function DashboardPage() {
   const { t, language } = useLanguage();
   const [data, setData] = useState<DashboardState>(EMPTY_STATE);
@@ -221,14 +167,14 @@ export default function DashboardPage() {
   );
 
   function formatDateTime(value: string | null): string {
-    if (!value) return "Not yet";
+    if (!value) return t("pages.dashboard.not_yet");
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return value;
     return parsed.toLocaleString(locale);
   }
 
   function formatDate(value: string | null): string {
-    if (!value) return "Never";
+    if (!value) return t("pages.dashboard.never");
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return value;
     return parsed.toLocaleDateString(locale);
@@ -239,7 +185,7 @@ export default function DashboardPage() {
   }
 
   function formatDays(days: number[] | undefined): string {
-    if (!days || days.length === 0) return "Not configured";
+    if (!days || days.length === 0) return t("pages.dashboard.not_configured");
     const keys = [
       "weekday.sun",
       "weekday.mon",
@@ -253,16 +199,16 @@ export default function DashboardPage() {
   }
 
   function formatDailySchedule(settings: SettingsSnapshot | null): string {
-    if (!settings) return "Not configured";
+    if (!settings) return t("pages.dashboard.not_configured");
     if (settings.daily_report_schedule_mode === "single") {
-      return `${formatDays(settings.daily_report_days)} at ${formatHour(settings.daily_report_single_hour)}`;
+      return `${formatDays(settings.daily_report_days)} ${t("pages.dashboard.at")} ${formatHour(settings.daily_report_single_hour)}`;
     }
-    return `${formatDays(settings.daily_report_days)} | ${formatHour(settings.daily_report_range_start_hour)}-${formatHour(settings.daily_report_range_end_hour)} | every ${settings.daily_report_interval_hours}h`;
+    return `${formatDays(settings.daily_report_days)} | ${formatHour(settings.daily_report_range_start_hour)}-${formatHour(settings.daily_report_range_end_hour)} | ${t("pages.dashboard.every")} ${settings.daily_report_interval_hours}${t("pages.dashboard.hours_short")}`;
   }
 
   function formatTimeSchedule(days: number[] | undefined, timeValue: string | undefined): string {
-    if (!days || days.length === 0 || !timeValue) return "Not configured";
-    return `${formatDays(days)} at ${timeValue}`;
+    if (!days || days.length === 0 || !timeValue) return t("pages.dashboard.not_configured");
+    return `${formatDays(days)} ${t("pages.dashboard.at")} ${timeValue}`;
   }
 
   async function loadDashboard({ silent = false } = {}) {
@@ -279,7 +225,6 @@ export default function DashboardPage() {
       onlineApi.get<AlertRow[]>("/alerts"),
       onlineApi.get<DailyRunLatest>("/daily-runs/latest"),
       onlineApi.get<InactiveClientsResponse>("/clients/inactive"),
-      onlineApi.get<InventoryHistoryRow[]>("/inventory/history", { params: { limit: 6 } }),
       onlineApi.get<SettingsSnapshot>("/settings"),
     ]);
 
@@ -307,18 +252,14 @@ export default function DashboardPage() {
       successCount += 1;
     }
     if (requests[5].status === "fulfilled") {
-      nextState.history = requests[5].value.data || [];
-      successCount += 1;
-    }
-    if (requests[6].status === "fulfilled") {
-      nextState.settings = requests[6].value.data;
+      nextState.settings = requests[5].value.data;
       successCount += 1;
     }
 
     if (successCount === 0) {
-      setError("Failed to load dashboard data.");
+      setError(t("pages.dashboard.load_failed"));
     } else if (successCount < requests.length) {
-      setError("Some dashboard sections could not be loaded.");
+      setError(t("pages.dashboard.load_partial"));
     }
 
     setData(nextState);
@@ -347,67 +288,28 @@ export default function DashboardPage() {
   const attentionItems = useMemo(
     () => [
       {
-        label: "Unread alerts",
+        label: t("pages.dashboard.unread_alerts"),
         value: unreadAlerts,
         tone: unreadAlerts > 0 ? "text-rose-700" : "text-emerald-700",
       },
       {
-        label: "Low inventory alerts",
+        label: t("pages.dashboard.low_inventory_alerts"),
         value: lowInventoryAlerts,
         tone: lowInventoryAlerts > 0 ? "text-amber-700" : "text-emerald-700",
       },
       {
-        label: "Inactive clients",
+        label: t("pages.dashboard.inactive_clients"),
         value: data.inactive?.count ?? 0,
         tone: (data.inactive?.count ?? 0) > 0 ? "text-amber-700" : "text-emerald-700",
       },
       {
-        label: "Critical flags today",
+        label: t("pages.dashboard.critical_flags_today"),
         value: criticalFlags,
         tone: criticalFlags > 0 ? "text-rose-700" : "text-emerald-700",
       },
     ],
-    [criticalFlags, data.inactive?.count, lowInventoryAlerts, unreadAlerts]
+    [criticalFlags, data.inactive?.count, lowInventoryAlerts, t, unreadAlerts]
   );
-
-  const quickActions = [
-    {
-      href: "/daily-report",
-      title: "Run daily report",
-      description: "Open the live daily pipeline and receipts checks.",
-      icon: FileBarChart2,
-    },
-    {
-      href: "/follow-up",
-      title: "Review inactive clients",
-      description: "See who needs contact and how long they have been inactive.",
-      icon: PhoneCall,
-    },
-    {
-      href: "/inventory",
-      title: "Review inventory changes",
-      description: "Open branch inventory, history, and undo actions.",
-      icon: Boxes,
-    },
-    {
-      href: "/product-statistics",
-      title: "Open product statistics",
-      description: "Check the latest monthly product performance.",
-      icon: BadgeDollarSign,
-    },
-    {
-      href: "/worker-statistics",
-      title: "Open worker statistics",
-      description: "Compare consultants and leads from the online flow.",
-      icon: Users,
-    },
-    {
-      href: "/settings",
-      title: "Open settings",
-      description: "Adjust schedules, RapidOne connection, and sync actions.",
-      icon: Settings,
-    },
-  ];
 
   return (
     <PageShell
@@ -419,7 +321,7 @@ export default function DashboardPage() {
           className="flex items-center gap-2 rounded-full border border-[var(--border)] bg-white/90 px-4 py-2 text-sm font-semibold text-[var(--primary-dark)] shadow-[var(--shadow-card)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-          {refreshing ? "Refreshing..." : "Refresh dashboard"}
+          {refreshing ? t("common.refreshing") : t("pages.dashboard.refresh")}
         </button>
       }
     >
@@ -434,39 +336,39 @@ export default function DashboardPage() {
           <MetricCard
             title={t("pages.dashboard.revenue_today")}
             value={currencyFormatter.format(data.daily?.revenue ?? 0)}
-            note={`For ${todayStr}`}
+            note={`${t("pages.dashboard.for_date")} ${todayStr}`}
             icon={BadgeDollarSign}
           />
           <MetricCard
             title={t("pages.dashboard.sales_count")}
             value={String(data.daily?.sales_count ?? 0)}
-            note="Sales rows loaded for today"
+            note={t("pages.dashboard.sales_rows_today")}
             icon={FileBarChart2}
           />
           <MetricCard
             title={t("pages.dashboard.flags")}
             value={String(data.flags.length)}
-            note={`${criticalFlags} critical today`}
+            note={`${criticalFlags} ${t("pages.dashboard.critical_today")}`}
             icon={ShieldAlert}
           />
           <MetricCard
             title={t("header.alerts")}
             value={String(unreadAlerts)}
-            note={`${lowInventoryAlerts} inventory related`}
+            note={`${lowInventoryAlerts} ${t("pages.dashboard.inventory_related")}`}
             icon={AlertTriangle}
           />
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <div className="grid gap-6">
           <Panel
-            title="Operations Pulse"
-            description="This page should tell you what needs attention before you open any detailed report."
+            title={t("pages.dashboard.operations_pulse")}
+            description={t("pages.dashboard.operations_pulse_desc")}
             className="bg-[linear-gradient(170deg,#fffafc_0%,#ffffff_55%,#fff4f8_100%)]"
           >
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-3xl border border-white/70 bg-white/85 p-5 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
-                  Needs attention
+                  {t("pages.dashboard.needs_attention")}
                 </p>
                 <div className="mt-4 space-y-3">
                   {attentionItems.map((item) => (
@@ -483,19 +385,19 @@ export default function DashboardPage() {
 
               <div className="rounded-3xl border border-white/70 bg-white/85 p-5 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
-                  Last successful daily run
+                  {t("pages.dashboard.last_successful_daily_run")}
                 </p>
                 <p className="mt-3 text-2xl font-semibold text-[var(--primary-deep)]">
                   {formatDateTime(data.latestRun?.last_ran_at ?? null)}
                 </p>
                 <p className="mt-2 text-sm text-[var(--muted)]">
-                  Use this to see if the daily pipeline already completed recently.
+                  {t("pages.dashboard.last_run_desc")}
                 </p>
 
                 <div className="mt-5 grid gap-3">
                   <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
-                      Daily schedule
+                      {t("pages.dashboard.daily_schedule")}
                     </p>
                     <p className="mt-1 text-sm font-medium text-[var(--primary-dark)]">
                       {formatDailySchedule(data.settings)}
@@ -503,7 +405,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
-                      Receipts schedule
+                      {t("pages.dashboard.receipts_schedule")}
                     </p>
                     <p className="mt-1 text-sm font-medium text-[var(--primary-dark)]">
                       {formatTimeSchedule(
@@ -514,7 +416,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
-                      Clients sync schedule
+                      {t("pages.dashboard.clients_sync_schedule")}
                     </p>
                     <p className="mt-1 text-sm font-medium text-[var(--primary-dark)]">
                       {formatTimeSchedule(
@@ -527,121 +429,20 @@ export default function DashboardPage() {
               </div>
             </div>
           </Panel>
-
-          <Panel
-            title="Quick Actions"
-            description="Use the dashboard as a real starting point, not a decorative page."
-          >
-            <div className="grid gap-3">
-              {quickActions.map((item) => (
-                <ActionLink
-                  key={item.href}
-                  href={item.href}
-                  title={item.title}
-                  description={item.description}
-                  icon={item.icon}
-                />
-              ))}
-            </div>
-          </Panel>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-3">
+        <div className="grid gap-6 xl:grid-cols-1">
           <Panel
-            title="Recent Alerts"
-            description="Latest server alerts from the bell menu."
-          >
-            <div className="space-y-3">
-              {data.alerts.length === 0 ? (
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-4 text-sm text-[var(--muted)]">
-                  No alerts right now.
-                </div>
-              ) : (
-                data.alerts.slice(0, 5).map((alert) => (
-                  <div
-                    key={alert.id}
-                    className={`rounded-2xl border px-4 py-4 ${
-                      alert.is_read
-                        ? "border-[var(--border)] bg-white"
-                        : "border-rose-200 bg-rose-50"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-[var(--primary-deep)]">
-                          {alert.title}
-                        </p>
-                        <p className="mt-1 text-sm text-[var(--muted-strong)]">
-                          {alert.message || "No details"}
-                        </p>
-                      </div>
-                      <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--primary-dark)] shadow-sm">
-                        {alert.is_read ? "Read" : "Unread"}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-xs text-[var(--muted)]">
-                      {formatDateTime(alert.created_at)}
-                    </p>
-                  </div>
-                ))
-              )}
-            </div>
-          </Panel>
-
-          <Panel
-            title="Inventory Activity"
-            description="Most recent inventory changes recorded by the online server."
-          >
-            <div className="space-y-3">
-              {data.history.length === 0 ? (
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-4 text-sm text-[var(--muted)]">
-                  No inventory changes found yet.
-                </div>
-              ) : (
-                data.history.map((row) => (
-                  <div
-                    key={`${row.action_group_id}-${row.product_code}-${row.branch_name}`}
-                    className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-[var(--primary-deep)]">
-                          {row.product_name}
-                        </p>
-                        <p className="mt-1 text-sm text-[var(--muted-strong)]">
-                          {row.branch_name} | {row.change_type}
-                        </p>
-                      </div>
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          row.qty_delta >= 0
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "bg-amber-50 text-amber-700"
-                        }`}
-                      >
-                        {row.qty_delta >= 0 ? `+${row.qty_delta}` : row.qty_delta}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-xs text-[var(--muted)]">
-                      {formatDateTime(row.created_at)}
-                    </p>
-                  </div>
-                ))
-              )}
-            </div>
-          </Panel>
-
-          <Panel
-            title="Follow-up Pressure"
-            description="Clients currently counted as inactive according to your settings."
+            title={t("pages.dashboard.follow_up_pressure")}
+            description={t("pages.dashboard.follow_up_pressure_desc")}
           >
             <div className="rounded-3xl border border-[var(--border)] bg-[var(--card-soft)] p-4">
-              <p className="text-sm text-[var(--muted)]">Inactive threshold</p>
+              <p className="text-sm text-[var(--muted)]">{t("pages.dashboard.inactive_threshold")}</p>
               <p className="mt-2 text-2xl font-semibold text-[var(--primary-deep)]">
-                {data.inactive?.days ?? data.settings?.follow_up_inactive_days ?? 0} days
+                {data.inactive?.days ?? data.settings?.follow_up_inactive_days ?? 0} {t("pages.dashboard.days")}
               </p>
               <p className="mt-2 text-sm text-[var(--muted)]">
-                {data.inactive?.count ?? 0} clients currently need attention.
+                {data.inactive?.count ?? 0} {t("pages.dashboard.clients_need_attention")}
               </p>
             </div>
 
@@ -657,22 +458,22 @@ export default function DashboardPage() {
                         {client.customer_name || client.mobile}
                       </p>
                       <p className="mt-1 text-sm text-[var(--muted-strong)]">
-                        {client.last_branch || "No branch"} | {client.mobile || "No mobile"}
+                        {client.last_branch || t("pages.dashboard.no_branch")} | {client.mobile || t("pages.dashboard.no_mobile")}
                       </p>
                     </div>
                     <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
-                      {client.days_since_last}d
+                      {client.days_since_last}{t("pages.dashboard.days_short")}
                     </span>
                   </div>
                   <p className="mt-3 text-xs text-[var(--muted)]">
-                    Last visit: {formatDate(client.last_visit)}
+                    {t("pages.dashboard.last_visit")}: {formatDate(client.last_visit)}
                   </p>
                 </div>
               ))}
 
               {(data.inactive?.clients || []).length === 0 ? (
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-4 text-sm text-[var(--muted)]">
-                  No inactive clients right now.
+                  {t("pages.dashboard.no_inactive_clients")}
                 </div>
               ) : null}
             </div>
@@ -683,7 +484,7 @@ export default function DashboardPage() {
           <div className="rounded-2xl border border-[var(--border)] bg-white/90 px-4 py-4 text-sm text-[var(--muted)]">
             <div className="flex items-center gap-2">
               <Clock3 className="h-4 w-4" />
-              Loading dashboard data...
+              {t("pages.dashboard.loading")}
             </div>
           </div>
         ) : null}
