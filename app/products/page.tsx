@@ -14,6 +14,13 @@ type ProductCreatePayload = {
   currency: string;
 };
 
+type ProductUpdatePayload = {
+  item_code: string;
+  item_name: string;
+  base_price?: number | null;
+  currency: string;
+};
+
 type AliasRow = { alias_code: string; alias_name: string };
 
 export default function ProductsPage() {
@@ -32,6 +39,12 @@ export default function ProductsPage() {
   const [customBasePrice, setCustomBasePrice] = useState("");
   const [customAliases, setCustomAliases] = useState<AliasRow[]>([{ alias_code: "", alias_name: "" }]);
   const [customSaving, setCustomSaving] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editItemCode, setEditItemCode] = useState("");
+  const [editItemName, setEditItemName] = useState("");
+  const [editBasePrice, setEditBasePrice] = useState("");
+  const [editCurrency, setEditCurrency] = useState("ILS");
+  const [editSaving, setEditSaving] = useState(false);
 
   const [search, setSearch] = useState("");
   const [itemCode, setItemCode] = useState("");
@@ -44,6 +57,22 @@ export default function ProductsPage() {
     setCustomBasePrice("");
     setCustomAliases([{ alias_code: "", alias_name: "" }]);
     setCustomModalOpen(true);
+  }
+
+  function openEditModal(product: Product) {
+    setEditingProduct(product);
+    setEditItemCode(product.item_code || "");
+    setEditItemName(product.item_name || "");
+    setEditBasePrice(product.base_price == null ? "" : String(product.base_price));
+    setEditCurrency(product.currency || "ILS");
+  }
+
+  function closeEditModal() {
+    setEditingProduct(null);
+    setEditItemCode("");
+    setEditItemName("");
+    setEditBasePrice("");
+    setEditCurrency("ILS");
   }
 
   function customAddAlias() {
@@ -165,6 +194,41 @@ export default function ProductsPage() {
           err?.message ||
           t("pages.products.delete_failed")
       );
+    }
+  }
+
+  async function handleEditProduct() {
+    if (!editingProduct) return;
+    if (!editItemCode.trim() || !editItemName.trim()) {
+      setError(t("pages.products.required_fields"));
+      return;
+    }
+
+    try {
+      setEditSaving(true);
+      setError("");
+      setSuccess("");
+
+      const payload: ProductUpdatePayload = {
+        item_code: editItemCode.trim(),
+        item_name: editItemName.trim(),
+        base_price: editBasePrice.trim() === "" ? null : Number(editBasePrice),
+        currency: editCurrency.trim() || "ILS",
+      };
+
+      await onlineApi.put(`/products/${editingProduct.id}`, payload);
+      setEditSaving(false);
+      setSuccess(t("pages.products.updated"));
+      closeEditModal();
+      await loadProducts();
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.detail ||
+          err?.message ||
+          t("pages.products.update_failed")
+      );
+    } finally {
+      setEditSaving(false);
     }
   }
 
@@ -352,13 +416,21 @@ export default function ProductsPage() {
                       <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">
                         {product.currency || "ILS"}
                       </td>
-                      <td className="px-4 py-4 text-right">
+                      <td className="px-4 py-4">
+                        <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => openEditModal(product)}
+                          className="rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)]"
+                        >
+                          {t("pages.products.edit")}
+                        </button>
                         <button
                           onClick={() => handleDeleteProduct(product.item_name)}
                           className="rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)]"
                         >
                           {t("pages.products.deactivate")}
                         </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -468,6 +540,87 @@ export default function ProductsPage() {
                   className="rounded-2xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white shadow transition hover:-translate-y-0.5 hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {customSaving ? t("pages.inventory.custom_saving") : t("pages.inventory.custom_save")}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {editingProduct ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4">
+            <div className="w-full max-w-2xl rounded-3xl border border-[var(--border)] bg-white p-6 shadow-2xl">
+              <div className="mb-5">
+                <h2 className="text-xl font-semibold text-[var(--primary-deep)]">
+                  {t("pages.products.edit_title")}
+                </h2>
+                <p className="mt-1 text-sm text-[var(--muted)]">
+                  {t("pages.products.edit_desc")}
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-[var(--primary-dark)]">
+                    {t("pages.products.item_code")}
+                  </label>
+                  <input
+                    value={editItemCode}
+                    onChange={(e) => setEditItemCode(e.target.value)}
+                    className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-[var(--primary-dark)]">
+                    {t("pages.products.item_name")}
+                  </label>
+                  <input
+                    value={editItemName}
+                    onChange={(e) => setEditItemName(e.target.value)}
+                    className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-[var(--primary-dark)]">
+                    {t("pages.products.base_price")}
+                  </label>
+                  <input
+                    value={editBasePrice}
+                    onChange={(e) => setEditBasePrice(e.target.value)}
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-[var(--primary-dark)]">
+                    {t("table.currency")}
+                  </label>
+                  <input
+                    value={editCurrency}
+                    onChange={(e) => setEditCurrency(e.target.value)}
+                    className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm uppercase outline-none transition focus:border-[var(--border-strong)] focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-wrap justify-end gap-3">
+                <button
+                  onClick={closeEditModal}
+                  disabled={editSaving}
+                  className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)] disabled:opacity-60"
+                >
+                  {t("common.cancel")}
+                </button>
+                <button
+                  onClick={handleEditProduct}
+                  disabled={editSaving || !editItemCode.trim() || !editItemName.trim()}
+                  className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {editSaving ? t("common.saving") : t("common.save")}
                 </button>
               </div>
             </div>

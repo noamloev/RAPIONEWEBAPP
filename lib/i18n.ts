@@ -15,7 +15,12 @@ export const translations: Record<AppLanguage, Dict> = {
     "pages.products.search_placeholder": "Search by code, name, barcode...",
     "pages.products.loading": "Loading products...",
     "pages.products.empty": "No products found.",
+    "pages.products.edit": "Edit",
+    "pages.products.edit_title": "Edit Product",
+    "pages.products.edit_desc": "Update the product details in the catalog.",
     "pages.products.deactivate": "Deactivate",
+    "pages.products.updated": "Product updated.",
+    "pages.products.update_failed": "Failed to update product",
     "table.code": "Code",
     "table.name": "Name",
     "table.barcode": "Barcode",
@@ -103,6 +108,7 @@ export const translations: Record<AppLanguage, Dict> = {
     "table.will_revert_to": "Will Revert To",
 
     "common.save": "Save",
+    "common.saving": "Saving...",
     "common.cancel": "Cancel",
     "common.refresh": "Refresh",
     "common.refreshing": "Refreshing...",
@@ -1170,6 +1176,12 @@ export const translations: Record<AppLanguage, Dict> = {
     "pages.worker_stats.data_source": "Data Source",
     "pages.worker_stats.source_local": "Old / Local",
     "pages.worker_stats.source_online": "Test / Online",
+    "common.saving": "שומר...",
+    "pages.products.edit": "ערוך",
+    "pages.products.edit_title": "עריכת מוצר",
+    "pages.products.edit_desc": "עדכן את פרטי המוצר בקטלוג.",
+    "pages.products.updated": "המוצר עודכן.",
+    "pages.products.update_failed": "עדכון המוצר נכשל",
   },
 };
 
