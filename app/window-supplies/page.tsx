@@ -13,7 +13,7 @@ import {
 import { useLanguage } from "@/components/language-provider";
 import { onlineApi } from "@/lib/api-online";
 import { getUser } from "@/lib/auth";
-import { WindowSupplyDraft } from "@/lib/types";
+import { WindowSupplyDocument, WindowSupplyDraft } from "@/lib/types";
 
 type PendingDocument = {
   localId: string;
@@ -46,6 +46,42 @@ function formatDate(value: string, locale: string) {
 
 function makeDocumentUrl(document: { content_type: string; data_base64: string }) {
   return `data:${document.content_type};base64,${document.data_base64}`;
+}
+
+function getDocumentExtension(fileName: string) {
+  const parts = fileName.split(".");
+  return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : "";
+}
+
+function renderDocumentPreview(document: WindowSupplyDocument, url: string) {
+  if (document.content_type.startsWith("image/")) {
+    return (
+      <img
+        src={url}
+        alt={document.document_name}
+        className="mb-4 h-48 w-full rounded-2xl object-cover"
+      />
+    );
+  }
+
+  if (document.content_type === "application/pdf") {
+    return (
+      <iframe
+        src={url}
+        title={document.document_name}
+        className="mb-4 h-48 w-full rounded-2xl border border-[var(--border)] bg-white"
+      />
+    );
+  }
+
+  return (
+    <div className="mb-4 flex h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-white px-4 text-center">
+      <div className="text-sm font-semibold text-[var(--primary-dark)]">
+        {getDocumentExtension(document.original_file_name) || "FILE"}
+      </div>
+      <div className="mt-2 text-xs text-[var(--muted)]">{document.content_type}</div>
+    </div>
+  );
 }
 
 export default function WindowSuppliesPage() {
@@ -373,7 +409,6 @@ export default function WindowSuppliesPage() {
                     <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                       {draft.documents.map((document) => {
                         const url = makeDocumentUrl(document);
-                        const isImage = document.content_type.startsWith("image/");
 
                         return (
                           <div
@@ -386,17 +421,7 @@ export default function WindowSuppliesPage() {
                             <div className="mb-3 text-xs text-[var(--muted)]">
                               {document.original_file_name}
                             </div>
-                            {isImage ? (
-                              <img
-                                src={url}
-                                alt={document.document_name}
-                                className="mb-4 h-48 w-full rounded-2xl object-cover"
-                              />
-                            ) : (
-                              <div className="mb-4 flex h-48 items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-white text-sm text-[var(--muted)]">
-                                PDF
-                              </div>
-                            )}
+                            {renderDocumentPreview(document, url)}
                             <a
                               href={url}
                               target="_blank"
