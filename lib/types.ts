@@ -109,3 +109,26 @@ export type ProductStatRow = {
   revenue?: number | null;
   percent?: number | null;
 };
+
+
+export type WindowSupplyDocument = {
+  id: number;
+  document_name: string;
+  original_file_name: string;
+  content_type: string;
+  file_size: number;
+  data_base64: string;
+  created_at: string;
+};
+
+export type WindowSupplyDraft = {
+  id: number;
+  window_name: string;
+  notes: string;
+  status: string;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+  document_count: number;
+  documents: WindowSupplyDocument[];
+};
