@@ -54,6 +54,7 @@ export default function WindowSuppliesPage() {
   const [deviceReady, setDeviceReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deletingDocumentId, setDeletingDocumentId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [drafts, setDrafts] = useState<WindowSupplyDraft[]>([]);
@@ -161,6 +162,33 @@ export default function WindowSuppliesPage() {
       setError(message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function deleteSavedDocument(draftId: number, documentId: number) {
+    try {
+      setDeletingDocumentId(documentId);
+      setError("");
+      setSuccess("");
+
+      const response = await onlineApi.delete<WindowSupplyDraft>(
+        `/window-supplies/drafts/${draftId}/documents/${documentId}`
+      );
+      const updatedDraft = response.data;
+
+      setDrafts((current) =>
+        current.map((draft) => (draft.id === draftId && updatedDraft ? updatedDraft : draft))
+      );
+      setSuccess(t("pages.window_supplies.document_deleted"));
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { detail?: string } }; message?: string })?.response?.data
+          ?.detail ||
+        (err as { message?: string })?.message ||
+        t("pages.window_supplies.delete_failed");
+      setError(message);
+    } finally {
+      setDeletingDocumentId(null);
     }
   }
 
@@ -377,6 +405,16 @@ export default function WindowSuppliesPage() {
                             >
                               {t("pages.window_supplies.open_document")}
                             </a>
+                            <div className="mt-3">
+                              <SecondaryButton
+                                onClick={() => deleteSavedDocument(draft.id, document.id)}
+                                disabled={deletingDocumentId === document.id}
+                              >
+                                {deletingDocumentId === document.id
+                                  ? t("pages.window_supplies.deleting_document")
+                                  : t("pages.window_supplies.delete_document")}
+                              </SecondaryButton>
+                            </div>
                           </div>
                         );
                       })}
