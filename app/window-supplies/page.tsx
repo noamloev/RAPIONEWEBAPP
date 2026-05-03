@@ -44,8 +44,21 @@ function formatDate(value: string, locale: string) {
   return parsed.toLocaleString(locale);
 }
 
-function makeDocumentUrl(document: { content_type: string; data_base64: string }) {
-  return `data:${document.content_type};base64,${document.data_base64}`;
+function decodeBase64(base64Value: string) {
+  const binary = atob(base64Value);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes;
+}
+
+function makeObjectUrl(document: { content_type: string; data_base64: string }) {
+  const bytes = decodeBase64(document.data_base64);
+  const blob = new Blob([bytes], { type: document.content_type || "application/octet-stream" });
+  return URL.createObjectURL(blob);
 }
 
 function getDocumentExtension(fileName: string) {
@@ -53,33 +66,73 @@ function getDocumentExtension(fileName: string) {
   return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : "";
 }
 
-function renderDocumentPreview(document: WindowSupplyDocument, url: string) {
-  if (document.content_type.startsWith("image/")) {
-    return (
-      <img
-        src={url}
-        alt={document.document_name}
-        className="mb-4 h-48 w-full rounded-2xl object-cover"
-      />
-    );
-  }
+function SavedDocumentCard({
+  draftId,
+  document,
+  deletingDocumentId,
+  onDeleteDocument,
+  t,
+}: {
+  draftId: number;
+  document: WindowSupplyDocument;
+  deletingDocumentId: number | null;
+  onDeleteDocument: (draftId: number, documentId: number) => void;
+  t: (key: string) => string;
+}) {
+  const objectUrl = useMemo(() => makeObjectUrl(document), [document]);
 
-  if (document.content_type === "application/pdf") {
-    return (
-      <iframe
-        src={url}
-        title={document.document_name}
-        className="mb-4 h-48 w-full rounded-2xl border border-[var(--border)] bg-white"
-      />
-    );
-  }
+  useEffect(() => () => URL.revokeObjectURL(objectUrl), [objectUrl]);
+
+  const isPdf = document.content_type === "application/pdf";
+  const isImage = document.content_type.startsWith("image/");
 
   return (
-    <div className="mb-4 flex h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-white px-4 text-center">
-      <div className="text-sm font-semibold text-[var(--primary-dark)]">
-        {getDocumentExtension(document.original_file_name) || "FILE"}
+    <div className="rounded-[26px] border border-[var(--border)] bg-[var(--card-soft)] p-4">
+      <div className="mb-3 text-sm font-semibold text-[var(--primary-dark)]">
+        {document.document_name}
       </div>
-      <div className="mt-2 text-xs text-[var(--muted)]">{document.content_type}</div>
+      <div className="mb-3 break-all text-xs text-[var(--muted)]">{document.original_file_name}</div>
+      {isImage ? (
+        <img
+          src={objectUrl}
+          alt={document.document_name}
+          className="mb-4 h-48 w-full rounded-2xl object-cover"
+        />
+      ) : null}
+      {isPdf ? (
+        <iframe
+          src={objectUrl}
+          title={document.document_name}
+          className="mb-4 h-48 w-full rounded-2xl border border-[var(--border)] bg-white"
+        />
+      ) : null}
+      {!isImage && !isPdf ? (
+        <div className="mb-4 flex h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-white px-4 text-center">
+          <div className="text-sm font-semibold text-[var(--primary-dark)]">
+            {getDocumentExtension(document.original_file_name) || "FILE"}
+          </div>
+          <div className="mt-2 break-all text-xs text-[var(--muted)]">{document.content_type}</div>
+        </div>
+      ) : null}
+      <div className="flex flex-wrap gap-3">
+        <a
+          href={objectUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-[var(--primary-dark)] shadow-sm"
+        >
+          {t("pages.window_supplies.open_document")}
+        </a>
+        <SecondaryButton
+          onClick={() => onDeleteDocument(draftId, document.id)}
+          disabled={deletingDocumentId === document.id}
+          className="px-4 py-2"
+        >
+          {deletingDocumentId === document.id
+            ? t("pages.window_supplies.deleting_document")
+            : t("pages.window_supplies.delete_document")}
+        </SecondaryButton>
+      </div>
     </div>
   );
 }
@@ -91,6 +144,7 @@ export default function WindowSuppliesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deletingDocumentId, setDeletingDocumentId] = useState<number | null>(null);
+  const [deletingDraftId, setDeletingDraftId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [drafts, setDrafts] = useState<WindowSupplyDraft[]>([]);
@@ -225,6 +279,27 @@ export default function WindowSuppliesPage() {
       setError(message);
     } finally {
       setDeletingDocumentId(null);
+    }
+  }
+
+  async function deleteDraft(draftId: number) {
+    try {
+      setDeletingDraftId(draftId);
+      setError("");
+      setSuccess("");
+
+      await onlineApi.delete(`/window-supplies/drafts/${draftId}`);
+      setDrafts((current) => current.filter((draft) => draft.id !== draftId));
+      setSuccess(t("pages.window_supplies.draft_deleted"));
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { detail?: string } }; message?: string })?.response?.data
+          ?.detail ||
+        (err as { message?: string })?.message ||
+        t("pages.window_supplies.delete_draft_failed");
+      setError(message);
+    } finally {
+      setDeletingDraftId(null);
     }
   }
 
@@ -382,13 +457,24 @@ export default function WindowSuppliesPage() {
                 {drafts.map((draft) => (
                   <article
                     key={draft.id}
-                    className="rounded-[30px] border border-[var(--border)] bg-white p-5 shadow-[0_10px_24px_rgba(110,61,82,0.04)]"
+                    className="rounded-[30px] border border-[var(--border)] bg-white p-4 shadow-[0_10px_24px_rgba(110,61,82,0.04)] sm:p-5"
                   >
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div>
-                        <h3 className="text-xl font-semibold text-[var(--primary-dark)]">
-                          {draft.window_name}
-                        </h3>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <h3 className="text-xl font-semibold text-[var(--primary-dark)]">
+                            {draft.window_name}
+                          </h3>
+                          <SecondaryButton
+                            onClick={() => deleteDraft(draft.id)}
+                            disabled={deletingDraftId === draft.id}
+                            className="px-4 py-2 text-xs"
+                          >
+                            {deletingDraftId === draft.id
+                              ? t("pages.window_supplies.deleting_draft")
+                              : t("pages.window_supplies.delete_draft")}
+                          </SecondaryButton>
+                        </div>
                         <div className="mt-2 text-sm text-[var(--muted)]">
                           {t("pages.window_supplies.created_by")}: {draft.created_by || "-"}
                         </div>
@@ -407,42 +493,16 @@ export default function WindowSuppliesPage() {
                     </div>
 
                     <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                      {draft.documents.map((document) => {
-                        const url = makeDocumentUrl(document);
-
-                        return (
-                          <div
-                            key={document.id}
-                            className="rounded-[26px] border border-[var(--border)] bg-[var(--card-soft)] p-4"
-                          >
-                            <div className="mb-3 text-sm font-semibold text-[var(--primary-dark)]">
-                              {document.document_name}
-                            </div>
-                            <div className="mb-3 text-xs text-[var(--muted)]">
-                              {document.original_file_name}
-                            </div>
-                            {renderDocumentPreview(document, url)}
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-[var(--primary-dark)] shadow-sm"
-                            >
-                              {t("pages.window_supplies.open_document")}
-                            </a>
-                            <div className="mt-3">
-                              <SecondaryButton
-                                onClick={() => deleteSavedDocument(draft.id, document.id)}
-                                disabled={deletingDocumentId === document.id}
-                              >
-                                {deletingDocumentId === document.id
-                                  ? t("pages.window_supplies.deleting_document")
-                                  : t("pages.window_supplies.delete_document")}
-                              </SecondaryButton>
-                            </div>
-                          </div>
-                        );
-                      })}
+                      {draft.documents.map((document) => (
+                        <SavedDocumentCard
+                          key={document.id}
+                          draftId={draft.id}
+                          document={document}
+                          deletingDocumentId={deletingDocumentId}
+                          onDeleteDocument={deleteSavedDocument}
+                          t={t}
+                        />
+                      ))}
                     </div>
                   </article>
                 ))}

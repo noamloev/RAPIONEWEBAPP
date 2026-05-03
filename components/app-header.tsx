@@ -180,7 +180,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
     <>
       <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-white/70 backdrop-blur-xl">
         <div
-          className={`flex min-h-[78px] items-center justify-between gap-4 px-6 lg:px-8 ${
+          className={`flex min-h-[72px] items-center justify-between gap-3 px-3 sm:px-6 lg:min-h-[78px] lg:px-8 ${
             dir === "rtl" ? "flex-row-reverse" : ""
           }`}
         >
@@ -189,7 +189,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
               <Sparkles className="h-3.5 w-3.5" />
               RapidOne Manager
             </div>
-            <h2 className="mt-1 truncate text-2xl font-semibold text-[var(--primary-deep)]">
+            <h2 className="mt-1 truncate text-xl font-semibold text-[var(--primary-deep)] sm:text-2xl">
               {title}
             </h2>
           </div>
@@ -227,7 +227,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
               </button>
 
               {alertsOpen ? (
-                <div className="absolute right-0 top-14 z-50 w-[380px] rounded-3xl border border-rose-200 bg-white p-4 shadow-2xl">
+                <div className="absolute right-0 top-14 z-50 w-[min(380px,calc(100vw-1rem))] rounded-3xl border border-rose-200 bg-white p-4 shadow-2xl">
                   <div className="mb-3 flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-rose-950">{t("header.alerts")}</h3>
                     <span className="text-xs text-rose-500">
@@ -325,8 +325,8 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
 
       {selectedReceiptsAlert ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4">
-          <div className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-[32px] border border-rose-200 bg-white shadow-2xl">
-            <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-6 py-5">
+          <div className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-[24px] border border-rose-200 bg-white shadow-2xl sm:rounded-[32px]">
+            <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-4 py-4 sm:px-6 sm:py-5">
               <div className="min-w-0">
                 <h3 className="text-xl font-semibold text-[var(--primary-deep)]">
                   {selectedReceiptsAlert.title}
@@ -344,7 +344,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
               </button>
             </div>
 
-            <div className="grid gap-4 border-b border-[var(--border)] bg-[var(--card-soft)] px-6 py-4 md:grid-cols-3">
+            <div className="grid gap-4 border-b border-[var(--border)] bg-[var(--card-soft)] px-4 py-4 md:grid-cols-3 sm:px-6">
               <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
                 <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">{t("pages.daily.receipts_summary_missing_receipt")}</div>
                 <div className="mt-1 text-xl font-semibold text-[var(--primary-deep)]">
@@ -365,7 +365,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
               </div>
             </div>
 
-            <div className="max-h-[46vh] overflow-auto px-6 py-5">
+            <div className="max-h-[46vh] overflow-auto px-4 py-4 sm:px-6 sm:py-5">
               {receiptsRows.length === 0 ? (
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-4 text-sm text-[var(--muted)]">
                   {t("header.receipts_no_details")}
@@ -414,7 +414,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-3 border-t border-[var(--border)] px-6 py-5">
+            <div className="flex items-center justify-end gap-3 border-t border-[var(--border)] px-4 py-4 sm:px-6 sm:py-5">
               <button
                 onClick={() => setSelectedReceiptsAlert(null)}
                 className="rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)]"

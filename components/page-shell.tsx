@@ -24,9 +24,9 @@ export function PageShell({
         <div className="flex min-w-0 flex-1 flex-col">
           <AppHeader title={title} centerContent={headerCenter} />
 
-          <main className="flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+          <main className="flex-1 px-3 py-4 pb-24 sm:px-6 lg:px-8 lg:py-7 lg:pb-7">
             <div className="mx-auto max-w-[1600px] space-y-6">
-              <section className="glass-card luxury-ring rounded-[32px] border border-[var(--border)] px-6 py-6 shadow-[var(--shadow-soft)] sm:px-8">
+              <section className="glass-card luxury-ring rounded-[28px] border border-[var(--border)] px-4 py-5 shadow-[var(--shadow-soft)] sm:rounded-[32px] sm:px-8 sm:py-6">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                   <div>
                     <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--primary)]">
