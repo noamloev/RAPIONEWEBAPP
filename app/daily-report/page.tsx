@@ -589,7 +589,7 @@ export default function DailyReportPage() {
                   <tr>
                     {[
                       t("table.severity"), t("table.date"), t("table.branch"),
-                      t("table.item"), t("table.customer"), t("table.invoice"), t("table.reason"),
+                      t("table.item"), t("table.customer"), t("table.invoice"), t("table.expected_price"), t("table.paid_price"), t("table.discount_pct"), t("table.reason"),
                     ].map((col) => (
                       <th key={col} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">
                         {col}
@@ -600,7 +600,7 @@ export default function DailyReportPage() {
                 <tbody className="divide-y divide-[var(--border)] bg-white">
                   {flags.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
+                      <td colSpan={10} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
                         {loading ? t("common.loading") : t("pages.daily.no_flags")}
                       </td>
                     </tr>
@@ -624,6 +624,9 @@ export default function DailyReportPage() {
                         <td className="px-4 py-4 text-sm text-[var(--foreground)]">{flag.item_name || "-"}</td>
                         <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{flag.customer_name || "-"}</td>
                         <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{flag.invoice_no || "-"}</td>
+                        <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{flag.expected_unit_price ?? "-"}</td>
+                        <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{flag.actual_unit_price ?? "-"}</td>
+                        <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{flag.discount_pct ?? "-"}</td>
                         <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{flag.reason}</td>
                       </tr>
                     ))

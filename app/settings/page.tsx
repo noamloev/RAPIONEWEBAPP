@@ -23,6 +23,7 @@ type SettingsPayload = {
   daily_report_range_start_hour: number;
   daily_report_range_end_hour: number;
   daily_report_interval_hours: number;
+  daily_report_discount_flag_threshold: number;
   daily_report_days: number[];
   receipts_check_time: string;
   receipts_check_days: number[];
@@ -94,6 +95,7 @@ const DEFAULT_SETTINGS: SettingsPayload = {
   daily_report_range_start_hour: 8,
   daily_report_range_end_hour: 22,
   daily_report_interval_hours: 2,
+  daily_report_discount_flag_threshold: 19,
   daily_report_days: [0, 1, 2, 3, 4],
   receipts_check_time: "22:00",
   receipts_check_days: [0, 1, 2, 3, 4],
@@ -494,6 +496,7 @@ export default function SettingsPage() {
         daily_report_range_start_hour: Number(settings.daily_report_range_start_hour || 0),
         daily_report_range_end_hour: Number(settings.daily_report_range_end_hour || 0),
         daily_report_interval_hours: Number(settings.daily_report_interval_hours || 1),
+        daily_report_discount_flag_threshold: Number(settings.daily_report_discount_flag_threshold || 0),
       };
 
       await onlineApi.post("/settings", payload);
@@ -792,6 +795,17 @@ export default function SettingsPage() {
                   />
                 </>
               )}
+            </div>
+
+            <div className="mt-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <NumberInput
+                  label={t("settings.daily_discount_threshold")}
+                  min={0}
+                  value={settings.daily_report_discount_flag_threshold}
+                  onChange={(value) => updateSettings({ daily_report_discount_flag_threshold: value })}
+                />
+              </div>
             </div>
 
             <div className="mt-6">

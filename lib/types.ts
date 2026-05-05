@@ -50,6 +50,7 @@ export type FlagRow = {
   severity: string;
   expected_unit_price?: number | null;
   actual_unit_price?: number | null;
+  discount_pct?: number | null;
   line_key?: string | null;
 };
 

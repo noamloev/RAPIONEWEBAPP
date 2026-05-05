@@ -66,6 +66,7 @@ export default function TransfersPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [rows, setRows] = useState<TransferRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingTransferId, setDeletingTransferId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [selectedBranch, setSelectedBranch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -107,6 +108,24 @@ export default function TransfersPage() {
       setError(msg);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function deleteDraftTransfer(transferId: string) {
+    try {
+      setDeletingTransferId(transferId);
+      setError("");
+      await onlineApi.delete(`/transfers/${transferId}`);
+      setRows((current) => current.filter((row) => row.id !== transferId));
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { detail?: string } }; message?: string })
+          ?.response?.data?.detail ||
+        (err as { message?: string })?.message ||
+        t("pages.transfers.delete_failed");
+      setError(msg);
+    } finally {
+      setDeletingTransferId(null);
     }
   }
 
@@ -192,12 +211,13 @@ export default function TransfersPage() {
               t("table.line_count"),
               t("table.inventory_moved"),
               t("table.created_at"),
+              t("table.actions"),
             ]}
           >
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   className="px-4 py-8 text-center text-sm text-[var(--muted)]"
                 >
                   {loading ? t("common.loading") : t("pages.transfers.empty")}
@@ -240,6 +260,21 @@ export default function TransfersPage() {
                   </td>
                   <td className="px-4 py-4 text-sm text-[var(--muted)]">
                     {row.created_at ? new Date(row.created_at).toLocaleDateString() : "-"}
+                  </td>
+                  <td className="px-4 py-4 text-sm text-[var(--foreground)]">
+                    {row.status === "DRAFT" ? (
+                      <SecondaryButton
+                        onClick={() => deleteDraftTransfer(row.id)}
+                        disabled={deletingTransferId === row.id}
+                        className="px-4 py-2 text-xs"
+                      >
+                        {deletingTransferId === row.id
+                          ? t("pages.transfers.deleting_draft")
+                          : t("pages.transfers.delete_draft")}
+                      </SecondaryButton>
+                    ) : (
+                      <span className="text-[var(--muted)]">-</span>
+                    )}
                   </td>
                 </tr>
               ))
