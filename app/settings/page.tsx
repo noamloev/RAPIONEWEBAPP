@@ -211,7 +211,7 @@ function SidebarButton({
       onClick={onClick}
       className={`w-full rounded-[24px] border px-4 py-4 text-left transition ${
         active
-          ? "border-[var(--border-strong)] bg-[linear-gradient(180deg,#fff8fb_0%,#f6e6ee_100%)] shadow-[0_16px_30px_rgba(159,79,114,0.14)]"
+          ? "border-[var(--border-strong)] bg-[linear-gradient(180deg,#ffffff_0%,#eff6ff_100%)] shadow-[0_16px_30px_rgba(37,99,235,0.14)]"
           : "border-[var(--border)] bg-white/82 hover:bg-white"
       }`}
     >
@@ -864,7 +864,7 @@ export default function SettingsPage() {
               <button
                 onClick={startClientsImport}
                 disabled={importingClients}
-                className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:opacity-60"
+                className="rounded-2xl bg-[var(--primary-strong)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(37,99,235,0.24)] transition hover:-translate-y-0.5 disabled:opacity-60"
               >
                 {importingClients ? t("settings.clients_import_running") : t("settings.clients_import_button")}
               </button>
@@ -938,7 +938,7 @@ export default function SettingsPage() {
               <button
                 onClick={syncInventoryAlerts}
                 disabled={syncingInventoryAlerts}
-                className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:opacity-60"
+                className="rounded-2xl bg-[var(--primary-strong)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(37,99,235,0.24)] transition hover:-translate-y-0.5 disabled:opacity-60"
               >
                 {syncingInventoryAlerts ? t("settings.inventory_alert_syncing") : t("settings.inventory_alert_sync")}
               </button>
@@ -1130,7 +1130,7 @@ export default function SettingsPage() {
             <button
               onClick={updateRapidOneDbName}
               disabled={discoveringDbName}
-              className="self-end rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:opacity-60"
+              className="self-end rounded-2xl bg-[var(--primary-strong)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(37,99,235,0.24)] transition hover:-translate-y-0.5 disabled:opacity-60"
             >
               {discoveringDbName ? "Updating..." : "Update DB Name"}
             </button>
@@ -1214,7 +1214,7 @@ export default function SettingsPage() {
                 <button
                   onClick={saveSettings}
                   disabled={saving || loading}
-                  className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:opacity-60"
+                  className="rounded-2xl bg-[var(--primary-strong)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(37,99,235,0.24)] transition hover:-translate-y-0.5 disabled:opacity-60"
                 >
                   {saving ? t("settings.saving") : t("settings.save_settings")}
                 </button>

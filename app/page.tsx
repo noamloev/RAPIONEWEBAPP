@@ -8,6 +8,7 @@ import {
   FileBarChart2,
   RefreshCw,
   ShieldAlert,
+  CheckCircle2,
 } from "lucide-react";
 import { PageShell } from "@/components/page-shell";
 import { onlineApi } from "@/lib/api-online";
@@ -105,17 +106,17 @@ function MetricCard({
   icon: typeof BadgeDollarSign;
 }) {
   return (
-    <div className="rounded-[30px] border border-[var(--border)] bg-white/90 p-5 shadow-[var(--shadow-card)]">
+    <div className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-card)]">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-[var(--muted)]">{title}</p>
-          <p className="mt-3 text-3xl font-semibold tracking-tight text-[var(--primary-deep)]">
+          <p className="text-sm font-medium text-[var(--muted-strong)]">{title}</p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-[var(--foreground)]">
             {value}
           </p>
-          <p className="mt-2 text-sm text-[var(--muted)]">{note}</p>
+          <p className="mt-2 text-sm leading-5 text-[var(--muted)]">{note}</p>
         </div>
 
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--card-soft)] text-[var(--primary-dark)] shadow-sm">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[var(--primary-dark)] shadow-sm">
           <Icon className="h-5 w-5" />
         </div>
       </div>
@@ -136,11 +137,11 @@ function Panel({
 }) {
   return (
     <section
-      className={`rounded-[32px] border border-[var(--border)] bg-white/90 p-6 shadow-[var(--shadow-card)] ${className}`.trim()}
+      className={`rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)] ${className}`.trim()}
     >
       <div className="mb-5">
-        <h3 className="text-xl font-semibold text-[var(--primary-deep)]">{title}</h3>
-        {description ? <p className="mt-2 text-sm text-[var(--muted)]">{description}</p> : null}
+        <h3 className="text-xl font-semibold text-[var(--foreground)]">{title}</h3>
+        {description ? <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{description}</p> : null}
       </div>
       {children}
     </section>
@@ -290,7 +291,7 @@ export default function DashboardPage() {
       {
         label: t("pages.dashboard.unread_alerts"),
         value: unreadAlerts,
-        tone: unreadAlerts > 0 ? "text-rose-700" : "text-emerald-700",
+        tone: unreadAlerts > 0 ? "text-red-700" : "text-emerald-700",
       },
       {
         label: t("pages.dashboard.low_inventory_alerts"),
@@ -305,7 +306,7 @@ export default function DashboardPage() {
       {
         label: t("pages.dashboard.critical_flags_today"),
         value: criticalFlags,
-        tone: criticalFlags > 0 ? "text-rose-700" : "text-emerald-700",
+        tone: criticalFlags > 0 ? "text-red-700" : "text-emerald-700",
       },
     ],
     [criticalFlags, data.inactive?.count, lowInventoryAlerts, t, unreadAlerts]
@@ -318,7 +319,7 @@ export default function DashboardPage() {
         <button
           onClick={() => loadDashboard({ silent: true })}
           disabled={loading || refreshing}
-          className="flex items-center gap-2 rounded-full border border-[var(--border)] bg-white/90 px-4 py-2 text-sm font-semibold text-[var(--primary-dark)] shadow-[var(--shadow-card)] transition hover:bg-[var(--card-soft)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--primary-dark)] shadow-[var(--shadow-card)] transition hover:bg-[var(--card-soft)] focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
           {refreshing ? t("common.refreshing") : t("pages.dashboard.refresh")}
@@ -363,18 +364,18 @@ export default function DashboardPage() {
           <Panel
             title={t("pages.dashboard.operations_pulse")}
             description={t("pages.dashboard.operations_pulse_desc")}
-            className="bg-[linear-gradient(170deg,#fffafc_0%,#ffffff_55%,#fff4f8_100%)]"
+            className="bg-[linear-gradient(170deg,#ffffff_0%,#f8fbff_58%,#eff6ff_100%)]"
           >
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-3xl border border-white/70 bg-white/85 p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
+              <div className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
                   {t("pages.dashboard.needs_attention")}
                 </p>
                 <div className="mt-4 space-y-3">
                   {attentionItems.map((item) => (
                     <div
                       key={item.label}
-                      className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3"
+                      className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-slate-50 px-4 py-3"
                     >
                       <span className="text-sm text-[var(--muted-strong)]">{item.label}</span>
                       <span className={`text-lg font-semibold ${item.tone}`}>{item.value}</span>
@@ -383,11 +384,11 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-white/70 bg-white/85 p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
+              <div className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--primary)]">
                   {t("pages.dashboard.last_successful_daily_run")}
                 </p>
-                <p className="mt-3 text-2xl font-semibold text-[var(--primary-deep)]">
+                <p className="mt-3 text-2xl font-semibold text-[var(--foreground)]">
                   {formatDateTime(data.latestRun?.last_ran_at ?? null)}
                 </p>
                 <p className="mt-2 text-sm text-[var(--muted)]">
@@ -399,7 +400,7 @@ export default function DashboardPage() {
                     <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
                       {t("pages.dashboard.daily_schedule")}
                     </p>
-                    <p className="mt-1 text-sm font-medium text-[var(--primary-dark)]">
+                    <p className="mt-1 text-sm font-medium text-[var(--foreground)]">
                       {formatDailySchedule(data.settings)}
                     </p>
                   </div>
@@ -407,7 +408,7 @@ export default function DashboardPage() {
                     <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
                       {t("pages.dashboard.receipts_schedule")}
                     </p>
-                    <p className="mt-1 text-sm font-medium text-[var(--primary-dark)]">
+                    <p className="mt-1 text-sm font-medium text-[var(--foreground)]">
                       {formatTimeSchedule(
                         data.settings?.receipts_check_days,
                         data.settings?.receipts_check_time
@@ -418,7 +419,7 @@ export default function DashboardPage() {
                     <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
                       {t("pages.dashboard.clients_sync_schedule")}
                     </p>
-                    <p className="mt-1 text-sm font-medium text-[var(--primary-dark)]">
+                    <p className="mt-1 text-sm font-medium text-[var(--foreground)]">
                       {formatTimeSchedule(
                         data.settings?.clients_sync_days,
                         data.settings?.clients_sync_time
@@ -436,9 +437,9 @@ export default function DashboardPage() {
             title={t("pages.dashboard.follow_up_pressure")}
             description={t("pages.dashboard.follow_up_pressure_desc")}
           >
-            <div className="rounded-3xl border border-[var(--border)] bg-[var(--card-soft)] p-4">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] p-4">
               <p className="text-sm text-[var(--muted)]">{t("pages.dashboard.inactive_threshold")}</p>
-              <p className="mt-2 text-2xl font-semibold text-[var(--primary-deep)]">
+              <p className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
                 {data.inactive?.days ?? data.settings?.follow_up_inactive_days ?? 0} {t("pages.dashboard.days")}
               </p>
               <p className="mt-2 text-sm text-[var(--muted)]">
@@ -450,11 +451,11 @@ export default function DashboardPage() {
               {(data.inactive?.clients || []).slice(0, 5).map((client) => (
                 <div
                   key={`${client.mobile}-${client.customer_name}`}
-                  className="rounded-2xl border border-[var(--border)] bg-white px-4 py-4"
+                  className="rounded-2xl border border-[var(--border)] bg-white px-4 py-4 transition hover:border-[var(--border-strong)] hover:bg-slate-50"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[var(--primary-deep)]">
+                      <p className="text-sm font-semibold text-[var(--foreground)]">
                         {client.customer_name || client.mobile}
                       </p>
                       <p className="mt-1 text-sm text-[var(--muted-strong)]">
@@ -472,7 +473,8 @@ export default function DashboardPage() {
               ))}
 
               {(data.inactive?.clients || []).length === 0 ? (
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-4 text-sm text-[var(--muted)]">
+                <div className="rounded-2xl border border-dashed border-[var(--border-strong)] bg-[var(--card-soft)] px-4 py-8 text-center text-sm text-[var(--muted-strong)]">
+                  <CheckCircle2 className="mx-auto mb-2 h-5 w-5 text-emerald-600" />
                   {t("pages.dashboard.no_inactive_clients")}
                 </div>
               ) : null}
@@ -481,10 +483,22 @@ export default function DashboardPage() {
         </div>
 
         {loading ? (
-          <div className="rounded-2xl border border-[var(--border)] bg-white/90 px-4 py-4 text-sm text-[var(--muted)]">
-            <div className="flex items-center gap-2">
-              <Clock3 className="h-4 w-4" />
-              {t("pages.dashboard.loading")}
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {[0, 1, 2, 3].map((item) => (
+              <div
+                key={item}
+                className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-card)]"
+              >
+                <div className="h-4 w-28 animate-pulse rounded bg-slate-200" />
+                <div className="mt-4 h-8 w-20 animate-pulse rounded bg-slate-200" />
+                <div className="mt-3 h-4 w-36 animate-pulse rounded bg-slate-100" />
+              </div>
+            ))}
+            <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-4 text-sm text-[var(--muted-strong)] md:col-span-2 xl:col-span-4">
+              <div className="flex items-center gap-2">
+                <Clock3 className="h-4 w-4 animate-pulse text-[var(--primary)]" />
+                {t("pages.dashboard.loading")}
+              </div>
             </div>
           </div>
         ) : null}

@@ -440,7 +440,7 @@ export default function DailyReportPage() {
             <button
               onClick={handleRunDaily}
               disabled={runningDaily}
-              className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-2xl bg-[var(--primary-strong)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(37,99,235,0.24)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {runningDaily ? t("pages.daily.running") : t("pages.daily.run_daily")}
             </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Search, Sparkles, X } from "lucide-react";
+import { Bell, Search, ShieldCheck, X } from "lucide-react";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { onlineApi } from "@/lib/api-online";
 import { useLanguage } from "@/components/language-provider";
@@ -129,8 +129,10 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
   }
 
   useEffect(() => {
-    loadAlerts();
-    refreshLocalAlerts();
+    queueMicrotask(() => {
+      loadAlerts();
+      refreshLocalAlerts();
+    });
 
     const interval = setInterval(() => {
       loadAlerts();
@@ -178,18 +180,18 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-white/70 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-white/82 backdrop-blur-xl">
         <div
           className={`flex min-h-[72px] items-center justify-between gap-3 px-3 sm:px-6 lg:min-h-[78px] lg:px-8 ${
             dir === "rtl" ? "flex-row-reverse" : ""
           }`}
         >
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-[var(--primary)]">
-              <Sparkles className="h-3.5 w-3.5" />
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary)]">
+              <ShieldCheck className="h-3.5 w-3.5" />
               RapidOne Manager
             </div>
-            <h2 className="mt-1 truncate text-xl font-semibold text-[var(--primary-deep)] sm:text-2xl">
+            <h2 className="mt-1 truncate text-xl font-semibold text-[var(--foreground)] sm:text-2xl">
               {title}
             </h2>
           </div>
@@ -198,7 +200,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
             {centerContent ? (
               centerContent
             ) : (
-              <div className="flex w-full max-w-md items-center gap-3 rounded-full border border-[var(--border)] bg-white/90 px-4 py-2 shadow-[var(--shadow-card)]">
+              <div className="flex w-full max-w-md items-center gap-3 rounded-2xl border border-[var(--border)] bg-white px-4 py-2.5 shadow-[var(--shadow-card)]">
                 <Search className="h-4 w-4 text-[var(--muted)]" />
                 <input
                   placeholder={t("header.search_placeholder")}
@@ -209,35 +211,35 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden rounded-full border border-[var(--border)] bg-[var(--card-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-dark)] md:block">
+            <div className="hidden rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-2 text-sm font-medium text-[var(--primary-dark)] md:block">
               {t("header.company_id")}: 1
             </div>
 
             <div className="relative">
               <button
                 onClick={() => setAlertsOpen((v) => !v)}
-                className="relative flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[var(--primary-dark)] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--primary-dark)] shadow-sm transition hover:bg-[var(--card-soft)] hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-100"
               >
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 ? (
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-bold text-white">
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white">
                     {unreadCount}
                   </span>
                 ) : null}
               </button>
 
               {alertsOpen ? (
-                <div className="absolute right-0 top-14 z-50 w-[min(380px,calc(100vw-1rem))] rounded-3xl border border-rose-200 bg-white p-4 shadow-2xl">
+                <div className="absolute right-0 top-14 z-50 w-[min(400px,calc(100vw-1rem))] rounded-2xl border border-[var(--border)] bg-white p-4 shadow-2xl">
                   <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-rose-950">{t("header.alerts")}</h3>
-                    <span className="text-xs text-rose-500">
+                    <h3 className="text-sm font-semibold text-[var(--foreground)]">{t("header.alerts")}</h3>
+                    <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
                       {unreadCount} {t("header.unread")}
                     </span>
                   </div>
 
                   <div className="max-h-[380px] space-y-3 overflow-y-auto">
                     {allAlerts.length === 0 ? (
-                      <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-4 text-sm text-rose-600">
+                      <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card-soft)] px-4 py-6 text-center text-sm text-[var(--muted-strong)]">
                         {t("header.no_alerts")}
                       </div>
                     ) : (
@@ -259,18 +261,18 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
                           <div
                             key={item.source === "server" ? `srv-${(alert as ServerAlert).id}` : `loc-${idx}`}
                             className={`rounded-2xl border px-4 py-3 ${
-                              isRead ? "border-rose-100 bg-white" : "border-rose-200 bg-rose-50"
+                              isRead ? "border-[var(--border)] bg-white" : "border-amber-200 bg-amber-50"
                             }`}
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
-                                <div className="text-sm font-semibold text-rose-950">
+                                <div className="text-sm font-semibold text-[var(--foreground)]">
                                   {alert.title}
                                 </div>
-                                <div className="mt-1 break-words text-sm text-rose-700 whitespace-pre-wrap">
+                                <div className="mt-1 break-words text-sm text-[var(--muted-strong)] whitespace-pre-wrap">
                                   {summaryText}
                                 </div>
-                                <div className="mt-2 text-xs text-rose-400">
+                                <div className="mt-2 text-xs text-[var(--muted)]">
                                   {alert.created_at
                                     ? new Date(alert.created_at).toLocaleString()
                                     : "-"}
@@ -280,7 +282,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
                               {showFullDetails ? (
                                 <button
                                   onClick={() => setSelectedReceiptsAlert(alert as ServerAlert)}
-                                  className="shrink-0 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50"
+                                  className="shrink-0 rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-xs font-semibold text-[var(--primary-dark)] hover:bg-[var(--card-soft)]"
                                 >
                                   {t("header.full_details")}
                                 </button>
@@ -296,7 +298,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
                                       refreshLocalAlerts();
                                     }
                                   }}
-                                  className="shrink-0 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50"
+                                  className="shrink-0 rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-xs font-semibold text-[var(--primary-dark)] hover:bg-[var(--card-soft)]"
                                 >
                                   {t("header.mark_read")}
                                 </button>
@@ -305,7 +307,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
                               {showDelete ? (
                                 <button
                                   onClick={() => deleteServerAlert((alert as ServerAlert).id)}
-                                  className="shrink-0 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50"
+                                  className="shrink-0 rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-xs font-semibold text-[var(--primary-dark)] hover:bg-[var(--card-soft)]"
                                 >
                                   {t("common.delete")}
                                 </button>
@@ -325,10 +327,10 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
 
       {selectedReceiptsAlert ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4">
-          <div className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-[24px] border border-rose-200 bg-white shadow-2xl sm:rounded-[32px]">
+          <div className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-2xl">
             <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-4 py-4 sm:px-6 sm:py-5">
               <div className="min-w-0">
-                <h3 className="text-xl font-semibold text-[var(--primary-deep)]">
+                <h3 className="text-xl font-semibold text-[var(--foreground)]">
                   {selectedReceiptsAlert.title}
                 </h3>
                 <p className="mt-2 text-sm text-[var(--muted)] whitespace-pre-wrap">
@@ -338,7 +340,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
 
               <button
                 onClick={() => setSelectedReceiptsAlert(null)}
-                className="rounded-full border border-[var(--border)] bg-white p-2 text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)]"
+                className="rounded-xl border border-[var(--border)] bg-white p-2 text-[var(--primary-dark)] transition hover:bg-[var(--card-soft)]"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -401,7 +403,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
                             row.diff === 0
                               ? "text-[var(--muted-strong)]"
                               : row.diff > 0
-                              ? "text-rose-700"
+                              ? "text-red-700"
                               : "text-amber-700"
                           }`}
                         >
@@ -427,7 +429,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
                   await markRead(selectedReceiptsAlert.id);
                   setSelectedReceiptsAlert(null);
                 }}
-                className="rounded-2xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5"
+                className="rounded-2xl bg-[var(--primary-strong)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(37,99,235,0.24)] transition hover:bg-[var(--primary-dark)]"
               >
                 {t("header.mark_read")}
               </button>

@@ -2,9 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LockKeyhole, Sparkles, UserRound } from "lucide-react";
+import { BarChart3, LockKeyhole, ShieldCheck, UserRound } from "lucide-react";
 import { onlineApi } from "@/lib/api-online";
 import { saveAuth } from "@/lib/auth";
+
+type ApiError = {
+  response?: {
+    data?: {
+      detail?: unknown;
+    };
+  };
+  message?: string;
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,9 +45,10 @@ export default function LoginPage() {
 
       saveAuth(token, user);
       router.push("/");
-    } catch (err: any) {
-      const detail = err?.response?.data?.detail;
-      setError(typeof detail === "string" ? detail : err?.message || "Login failed");
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
+      const detail = apiError.response?.data?.detail;
+      setError(typeof detail === "string" ? detail : apiError.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -46,45 +56,42 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(243,215,227,0.95),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(182,95,132,0.12),transparent_22%),linear-gradient(180deg,#fffafc_0%,#fff6fa_55%,#fffdfd_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(37,99,235,0.08)_1px,transparent_1px),linear-gradient(180deg,rgba(37,99,235,0.06)_1px,transparent_1px),linear-gradient(180deg,#f8fafc_0%,#eef4ff_52%,#ffffff_100%)] bg-[size:48px_48px,48px_48px,auto]" />
 
-      <div className="absolute -left-24 top-20 h-72 w-72 rounded-full bg-pink-200/30 blur-3xl" />
-      <div className="absolute -right-24 bottom-12 h-80 w-80 rounded-full bg-rose-300/20 blur-3xl" />
-
-      <div className="relative z-10 grid w-full max-w-6xl overflow-hidden rounded-[36px] border border-[var(--border)] bg-white/72 shadow-[var(--shadow-strong)] backdrop-blur-xl lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="hidden bg-[linear-gradient(160deg,#fff8fb_0%,#f8e4ed_45%,#f3d3df_100%)] p-10 lg:flex lg:flex-col lg:justify-between">
+      <div className="relative z-10 grid w-full max-w-6xl overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-strong)] lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="hidden bg-slate-950 p-10 text-white lg:flex lg:flex-col lg:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-[var(--primary-dark)]">
-              <Sparkles className="h-3.5 w-3.5" />
-              Premium Workspace
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-100">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Manager Workspace
             </div>
 
-            <h1 className="mt-8 max-w-md text-5xl font-semibold leading-tight text-[var(--primary-deep)]">
-              Elegant control for inventory and operations.
+            <h1 className="mt-8 max-w-md text-5xl font-semibold leading-tight text-white">
+              Clear control for company data and daily operations.
             </h1>
 
-            <p className="mt-5 max-w-lg text-base leading-7 text-[var(--muted-strong)]">
+            <p className="mt-5 max-w-lg text-base leading-7 text-slate-300">
               RapidOne Manager keeps your products, inventory, daily reporting,
-              and staff statistics in one refined dashboard experience.
+              client follow-up, and staff statistics in one focused workspace.
             </p>
           </div>
 
           <div className="grid gap-4">
-            <div className="rounded-3xl border border-white/70 bg-white/70 p-5 shadow-sm">
-              <p className="text-sm font-medium text-[var(--primary-dark)]">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-5 shadow-sm">
+              <p className="text-sm font-medium text-white">
                 Daily reporting
               </p>
-              <p className="mt-1 text-sm text-[var(--muted)]">
-                Run operations, review flags, and track progress in a cleaner workspace.
+              <p className="mt-1 text-sm leading-6 text-slate-300">
+                Run operations, review flags, and track progress without visual noise.
               </p>
             </div>
 
-            <div className="rounded-3xl border border-white/70 bg-white/70 p-5 shadow-sm">
-              <p className="text-sm font-medium text-[var(--primary-dark)]">
-                Luxury rose UI
+            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-5 shadow-sm">
+              <p className="text-sm font-medium text-white">
+                Data-first interface
               </p>
-              <p className="mt-1 text-sm text-[var(--muted)]">
-                Soft blush surfaces, premium contrast, and modern glass styling.
+              <p className="mt-1 text-sm leading-6 text-slate-300">
+                Blue operational surfaces with amber highlights for items that need attention.
               </p>
             </div>
           </div>
@@ -93,12 +100,12 @@ export default function LoginPage() {
         <div className="p-6 sm:p-10 lg:p-12">
           <div className="mx-auto w-full max-w-md">
             <div className="mb-8">
-              <div className="inline-flex items-center gap-2 rounded-full bg-[var(--card-soft)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
-                <Sparkles className="h-3.5 w-3.5" />
+              <div className="inline-flex items-center gap-2 rounded-2xl bg-[var(--card-soft)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary)]">
+                <BarChart3 className="h-3.5 w-3.5" />
                 Welcome back
               </div>
 
-              <h2 className="mt-5 text-4xl font-semibold tracking-tight text-[var(--primary-deep)]">
+              <h2 className="mt-5 text-4xl font-semibold tracking-tight text-[var(--foreground)]">
                 Sign in
               </h2>
               <p className="mt-2 text-sm text-[var(--muted)]">
@@ -113,7 +120,7 @@ export default function LoginPage() {
             ) : null}
 
             <form onSubmit={handleLogin} className="space-y-4">
-              <div className="rounded-[24px] border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 transition focus-within:border-[var(--border-strong)] focus-within:bg-white">
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 transition focus-within:border-[var(--primary)] focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100">
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
                   Username
                 </label>
@@ -128,7 +135,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="rounded-[24px] border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 transition focus-within:border-[var(--border-strong)] focus-within:bg-white">
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 transition focus-within:border-[var(--primary)] focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100">
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
                   Password
                 </label>
@@ -147,7 +154,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-[24px] bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-4 py-3.5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(159,79,114,0.34)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_34px_rgba(159,79,114,0.4)] disabled:opacity-60"
+                className="w-full rounded-2xl bg-[var(--primary-strong)] px-4 py-3.5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(37,99,235,0.28)] transition hover:bg-[var(--primary-dark)] focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Signing in..." : "Sign In"}
               </button>

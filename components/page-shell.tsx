@@ -26,23 +26,23 @@ export function PageShell({
 
           <main className="flex-1 px-3 py-4 pb-24 sm:px-6 lg:px-8 lg:py-7 lg:pb-7">
             <div className="mx-auto max-w-[1600px] space-y-6">
-              <section className="glass-card luxury-ring rounded-[28px] border border-[var(--border)] px-4 py-5 shadow-[var(--shadow-soft)] sm:rounded-[32px] sm:px-8 sm:py-6">
+              <section className="glass-card luxury-ring rounded-2xl border border-[var(--border)] px-4 py-5 shadow-[var(--shadow-soft)] sm:px-7 sm:py-6">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                   <div>
-                    <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--primary)]">
+                    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary)]">
                       {t("shell.workspace")}
                     </div>
-                    <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[var(--primary-deep)] sm:text-4xl">
+                    <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[var(--foreground)] sm:text-4xl">
                       {title}
                     </h1>
-                    <p className="mt-2 max-w-2xl text-sm text-[var(--muted)] sm:text-base">
+                    <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted-strong)] sm:text-base">
                       {t("shell.manage_text")}
                     </p>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl border border-[var(--border)] bg-white/80 px-4 py-3 shadow-sm">
-                      <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
+                    <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 shadow-sm">
+                      <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
                         {t("shell.theme")}
                       </p>
                       <p className="mt-1 text-sm font-medium text-[var(--primary-dark)]">
@@ -50,8 +50,8 @@ export function PageShell({
                       </p>
                     </div>
 
-                    <div className="rounded-2xl border border-[var(--border)] bg-white/80 px-4 py-3 shadow-sm">
-                      <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
+                    <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 shadow-sm">
+                      <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
                         {t("shell.status")}
                       </p>
                       <p className="mt-1 text-sm font-medium text-[var(--primary-dark)]">

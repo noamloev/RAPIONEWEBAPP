@@ -14,6 +14,7 @@ import {
   PieChart,
   Settings,
   Users,
+  Building2,
 } from "lucide-react";
 import { useLanguage } from "@/components/language-provider";
 
@@ -37,27 +38,30 @@ export function AppSidebar() {
 
   return (
     <>
-      <aside className="hidden w-[290px] shrink-0 border-r border-[var(--border)] bg-white/72 backdrop-blur-xl lg:block">
-        <div className="border-b border-[var(--border)] px-6 py-6">
-          <div className="rounded-[28px] border border-[var(--border)] bg-gradient-to-br from-[#fff7fb] via-white to-[#f8e8f0] p-5 shadow-[var(--shadow-card)]">
-            <div className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--primary)]">
-              Luxury Workspace
+      <aside className="hidden w-[292px] shrink-0 border-r border-[var(--border)] bg-slate-950 text-white lg:block">
+        <div className="border-b border-white/10 px-5 py-5">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-5 shadow-[var(--shadow-card)]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500 text-white shadow-[0_14px_30px_rgba(37,99,235,0.34)]">
+              <Building2 className="h-5 w-5" />
             </div>
-            <h1 className="mt-2 text-2xl font-semibold text-[var(--primary-deep)]">
+            <div className="mt-4 text-xs font-semibold uppercase tracking-[0.22em] text-blue-200">
+              Company Control
+            </div>
+            <h1 className="mt-2 text-2xl font-semibold text-white">
               RapidOne
             </h1>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              Inventory, reports and audit control
+            <p className="mt-1 text-sm leading-6 text-slate-300">
+              Inventory, reports, clients, and operational checks.
             </p>
           </div>
         </div>
 
-        <nav className="p-4">
-          <div className="mb-3 px-3 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+        <nav className="p-3">
+          <div className="mb-3 px-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
             Navigation
           </div>
 
-          <ul className="space-y-2">
+          <ul className="space-y-1.5">
             {navigationItems.map((item) => {
               const Icon = item.icon;
               const active = pathname === item.href;
@@ -66,17 +70,17 @@ export function AppSidebar() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all ${
+                    className={`group flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
                       active
-                        ? "bg-[linear-gradient(135deg,#b55a80_0%,#8e4767_100%)] text-white shadow-[0_14px_28px_rgba(159,79,114,0.28)]"
-                        : "text-[var(--muted-strong)] hover:bg-[var(--card-soft)] hover:text-[var(--primary-deep)]"
+                        ? "bg-blue-600 text-white shadow-[0_14px_28px_rgba(37,99,235,0.3)]"
+                        : "text-slate-300 hover:bg-white/10 hover:text-white"
                     }`}
                   >
                     <span
                       className={`flex h-9 w-9 items-center justify-center rounded-xl transition ${
                         active
-                          ? "bg-white/16 text-white"
-                          : "bg-white text-[var(--primary-dark)] shadow-sm group-hover:bg-white"
+                          ? "bg-white/15 text-white"
+                          : "bg-white/10 text-blue-100 group-hover:bg-white/15"
                       }`}
                     >
                       <Icon className="h-4 w-4" />
@@ -91,7 +95,7 @@ export function AppSidebar() {
         </nav>
       </aside>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-white/92 px-2 py-2 backdrop-blur-xl lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-white/95 px-2 py-2 shadow-[0_-14px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:hidden">
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
           {navigationItems.map((item) => {
             const Icon = item.icon;
@@ -103,7 +107,7 @@ export function AppSidebar() {
                 href={item.href}
                 className={`flex min-w-[86px] shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[11px] font-medium transition-all ${
                   active
-                    ? "bg-[linear-gradient(135deg,#b55a80_0%,#8e4767_100%)] text-white shadow-[0_10px_24px_rgba(159,79,114,0.24)]"
+                    ? "bg-blue-600 text-white shadow-[0_10px_24px_rgba(37,99,235,0.24)]"
                     : "bg-white text-[var(--muted-strong)]"
                 }`}
               >

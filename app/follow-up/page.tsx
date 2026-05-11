@@ -100,7 +100,7 @@ function PaginationBar({
             onClick={() => onPageChange(p)}
             className={`min-w-[40px] rounded-xl px-3 py-2 text-sm font-semibold transition ${
               p === page
-                ? "bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] text-white shadow-[0_10px_22px_rgba(159,79,114,0.24)]"
+                ? "bg-[var(--primary-strong)] text-white shadow-[0_10px_22px_rgba(37,99,235,0.22)]"
                 : "border border-[var(--border)] bg-white text-[var(--primary-dark)] hover:bg-[var(--card-soft)]"
             }`}
           >

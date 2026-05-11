@@ -1,48 +1,56 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fff8fb;
-  --background-soft: #fffdfd;
-  --foreground: #3f3340;
+  --background: #f8fafc;
+  --background-soft: #ffffff;
+  --foreground: #0f172a;
 
-  --card: rgba(255, 255, 255, 0.88);
+  --card: rgba(255, 255, 255, 0.92);
   --card-strong: #ffffff;
-  --card-soft: #fbf1f6;
+  --card-soft: #eef4ff;
 
-  --border: #ead6df;
-  --border-strong: #dcb8c7;
+  --border: #d8e2f3;
+  --border-strong: #9fb7dc;
 
-  --primary: #c67a9a;
-  --primary-strong: #9f4f72;
-  --primary-dark: #5a273f;
-  --primary-deep: #3d182b;
+  --primary: #2563eb;
+  --primary-strong: #1d4ed8;
+  --primary-dark: #1e40af;
+  --primary-deep: #172554;
 
-  --accent: #f3d7e3;
-  --accent-strong: #e9bfd1;
+  --accent: #f59e0b;
+  --accent-strong: #d97706;
 
-  --muted: #8a7480;
-  --muted-strong: #6e5a65;
+  --muted: #64748b;
+  --muted-strong: #475569;
 
-  --success-bg: #eef8f1;
-  --success-border: #bfdcc6;
-  --success-text: #2f6847;
+  --success-bg: #ecfdf5;
+  --success-border: #a7f3d0;
+  --success-text: #047857;
 
-  --danger-bg: #fff1f3;
-  --danger-border: #ebc4cb;
-  --danger-text: #9e4c5f;
+  --danger-bg: #fef2f2;
+  --danger-border: #fecaca;
+  --danger-text: #b91c1c;
 
-  --shadow-soft: 0 18px 40px rgba(90, 39, 63, 0.08);
-  --shadow-card: 0 14px 34px rgba(90, 39, 63, 0.07);
-  --shadow-strong: 0 24px 60px rgba(90, 39, 63, 0.14);
+  --shadow-soft: 0 18px 42px rgba(15, 23, 42, 0.08);
+  --shadow-card: 0 12px 28px rgba(15, 23, 42, 0.07);
+  --shadow-strong: 0 24px 62px rgba(15, 23, 42, 0.16);
 }
 
 html,
 body {
   min-height: 100%;
   background:
-    radial-gradient(circle at top left, rgba(243, 215, 227, 0.65), transparent 28%),
-    radial-gradient(circle at top right, rgba(198, 122, 154, 0.12), transparent 20%),
-    linear-gradient(180deg, #fffafc 0%, #fff6fa 52%, #fffdfd 100%);
+    linear-gradient(90deg, rgba(37, 99, 235, 0.08) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(37, 99, 235, 0.06) 1px, transparent 1px),
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 30%),
+    radial-gradient(circle at top right, rgba(245, 158, 11, 0.11), transparent 24%),
+    linear-gradient(180deg, #f8fafc 0%, #eef4ff 50%, #ffffff 100%);
+  background-size:
+    48px 48px,
+    48px 48px,
+    auto,
+    auto,
+    auto;
   color: var(--foreground);
 }
 
@@ -65,7 +73,7 @@ body {
 }
 
 ::selection {
-  background: rgba(198, 122, 154, 0.22);
+  background: rgba(37, 99, 235, 0.2);
 }
 
 input,
@@ -87,8 +95,8 @@ button {
 
 .luxury-ring {
   box-shadow:
-    0 0 0 1px rgba(220, 184, 199, 0.5),
-    0 12px 28px rgba(90, 39, 63, 0.08);
+    0 0 0 1px rgba(148, 163, 184, 0.28),
+    0 12px 28px rgba(15, 23, 42, 0.08);
 }
 body[data-dir="rtl"] {
   direction: rtl;

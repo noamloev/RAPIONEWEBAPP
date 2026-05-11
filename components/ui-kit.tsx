@@ -10,7 +10,7 @@ export function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[28px] border border-[var(--border)] bg-[var(--card)] p-6 shadow-[0_12px_28px_rgba(110,61,82,0.05)]">
+    <section className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-[var(--shadow-card)]">
       <div className="mb-5">
         <h3 className="text-xl font-semibold text-[var(--primary-dark)]">
           {title}
@@ -32,7 +32,7 @@ export function SummaryCard({
   value: string | number;
 }) {
   return (
-    <div className="rounded-[28px] border border-[var(--border)] bg-white p-5 shadow-[0_10px_24px_rgba(110,61,82,0.04)]">
+    <div className="rounded-[20px] border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-card)]">
       <p className="text-sm text-[var(--muted)]">{title}</p>
       <p className="mt-3 text-2xl font-semibold text-[var(--primary-dark)]">
         {value}
@@ -47,7 +47,7 @@ export function TextInput(
   return (
     <input
       {...props}
-      className={`w-full rounded-3xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white ${props.className ?? ""}`}
+      className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)] focus:bg-white focus:ring-4 focus:ring-blue-100 ${props.className ?? ""}`}
     />
   );
 }
@@ -58,7 +58,7 @@ export function SelectInput(
   return (
     <select
       {...props}
-      className={`w-full rounded-3xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white ${props.className ?? ""}`}
+      className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)] focus:bg-white focus:ring-4 focus:ring-blue-100 ${props.className ?? ""}`}
     />
   );
 }
@@ -69,7 +69,7 @@ export function TextAreaInput(
   return (
     <textarea
       {...props}
-      className={`w-full rounded-3xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-4 text-sm outline-none transition focus:border-[var(--border-strong)] focus:bg-white ${props.className ?? ""}`}
+      className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-4 text-sm outline-none transition focus:border-[var(--primary)] focus:bg-white focus:ring-4 focus:ring-blue-100 ${props.className ?? ""}`}
     />
   );
 }
@@ -80,7 +80,7 @@ export function PrimaryButton(
   return (
     <button
       {...props}
-      className={`rounded-3xl bg-[linear-gradient(135deg,#b55a80_0%,#8f4766_100%)] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(159,79,114,0.28)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(159,79,114,0.36)] disabled:cursor-not-allowed disabled:opacity-60 ${props.className ?? ""}`}
+      className={`rounded-2xl bg-[var(--primary-strong)] px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(37,99,235,0.22)] transition hover:bg-[var(--primary-dark)] hover:shadow-[0_16px_30px_rgba(37,99,235,0.28)] focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 ${props.className ?? ""}`}
     />
   );
 }
@@ -91,7 +91,7 @@ export function SecondaryButton(
   return (
     <button
       {...props}
-      className={`rounded-3xl border border-[var(--border)] bg-white px-6 py-3 text-sm font-semibold text-[var(--primary-dark)] shadow-sm transition hover:-translate-y-0.5 hover:bg-[var(--card-soft)] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 ${props.className ?? ""}`}
+      className={`rounded-2xl border border-[var(--border)] bg-white px-6 py-3 text-sm font-semibold text-[var(--primary-dark)] shadow-sm transition hover:bg-[var(--card-soft)] hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60 ${props.className ?? ""}`}
     />
   );
 }
@@ -104,7 +104,7 @@ export function DataTable({
   children: React.ReactNode;
 }) {
   return (
-    <div className="overflow-x-auto rounded-[24px] border border-[var(--border)]">
+    <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-white">
       <table className="min-w-full divide-y divide-[var(--border)]">
         <thead className="bg-[var(--card-soft)]">
           <tr>
