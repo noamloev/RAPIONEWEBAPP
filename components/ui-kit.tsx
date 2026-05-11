@@ -47,7 +47,7 @@ export function TextInput(
   return (
     <input
       {...props}
-      className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)] focus:bg-white focus:ring-4 focus:ring-blue-100 ${props.className ?? ""}`}
+      className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)] focus:bg-white focus:ring-4 focus:ring-fuchsia-100 ${props.className ?? ""}`}
     />
   );
 }
@@ -58,7 +58,7 @@ export function SelectInput(
   return (
     <select
       {...props}
-      className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)] focus:bg-white focus:ring-4 focus:ring-blue-100 ${props.className ?? ""}`}
+      className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)] focus:bg-white focus:ring-4 focus:ring-fuchsia-100 ${props.className ?? ""}`}
     />
   );
 }
@@ -69,7 +69,7 @@ export function TextAreaInput(
   return (
     <textarea
       {...props}
-      className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-4 text-sm outline-none transition focus:border-[var(--primary)] focus:bg-white focus:ring-4 focus:ring-blue-100 ${props.className ?? ""}`}
+      className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-4 text-sm outline-none transition focus:border-[var(--primary)] focus:bg-white focus:ring-4 focus:ring-fuchsia-100 ${props.className ?? ""}`}
     />
   );
 }
@@ -80,7 +80,7 @@ export function PrimaryButton(
   return (
     <button
       {...props}
-      className={`rounded-2xl bg-[var(--primary-strong)] px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(37,99,235,0.22)] transition hover:bg-[var(--primary-dark)] hover:shadow-[0_16px_30px_rgba(37,99,235,0.28)] focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 ${props.className ?? ""}`}
+      className={`rounded-2xl bg-[var(--primary-strong)] px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(192,38,211,0.22)] transition hover:bg-[var(--primary-dark)] hover:shadow-[0_16px_30px_rgba(192,38,211,0.28)] focus:outline-none focus:ring-4 focus:ring-fuchsia-200 disabled:cursor-not-allowed disabled:opacity-60 ${props.className ?? ""}`}
     />
   );
 }
@@ -91,7 +91,7 @@ export function SecondaryButton(
   return (
     <button
       {...props}
-      className={`rounded-2xl border border-[var(--border)] bg-white px-6 py-3 text-sm font-semibold text-[var(--primary-dark)] shadow-sm transition hover:bg-[var(--card-soft)] hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60 ${props.className ?? ""}`}
+      className={`rounded-2xl border border-[var(--border)] bg-white px-6 py-3 text-sm font-semibold text-[var(--primary-dark)] shadow-sm transition hover:bg-[var(--card-soft)] hover:shadow-md focus:outline-none focus:ring-4 focus:ring-fuchsia-100 disabled:cursor-not-allowed disabled:opacity-60 ${props.className ?? ""}`}
     />
   );
 }

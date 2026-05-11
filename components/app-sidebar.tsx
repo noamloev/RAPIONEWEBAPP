@@ -38,14 +38,14 @@ export function AppSidebar() {
 
   return (
     <>
-      <aside className="hidden w-[292px] shrink-0 border-r border-[var(--border)] bg-slate-950 text-white lg:block">
+      <aside className="hidden w-[292px] shrink-0 border-r border-fuchsia-950/50 bg-[#2a0d31] text-white lg:block">
         <div className="border-b border-white/10 px-5 py-5">
           <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-5 shadow-[var(--shadow-card)]">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500 text-white shadow-[0_14px_30px_rgba(37,99,235,0.34)]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-fuchsia-500 text-white shadow-[0_14px_30px_rgba(192,38,211,0.34)]">
               <Building2 className="h-5 w-5" />
             </div>
-            <div className="mt-4 text-xs font-semibold uppercase tracking-[0.22em] text-blue-200">
-              Company Control
+            <div className="mt-4 text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-200">
+              Company Studio
             </div>
             <h1 className="mt-2 text-2xl font-semibold text-white">
               RapidOne
@@ -72,7 +72,7 @@ export function AppSidebar() {
                     href={item.href}
                     className={`group flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
                       active
-                        ? "bg-blue-600 text-white shadow-[0_14px_28px_rgba(37,99,235,0.3)]"
+                        ? "bg-fuchsia-600 text-white shadow-[0_14px_28px_rgba(192,38,211,0.3)]"
                         : "text-slate-300 hover:bg-white/10 hover:text-white"
                     }`}
                   >
@@ -80,7 +80,7 @@ export function AppSidebar() {
                       className={`flex h-9 w-9 items-center justify-center rounded-xl transition ${
                         active
                           ? "bg-white/15 text-white"
-                          : "bg-white/10 text-blue-100 group-hover:bg-white/15"
+                          : "bg-white/10 text-fuchsia-100 group-hover:bg-white/15"
                       }`}
                     >
                       <Icon className="h-4 w-4" />
@@ -107,7 +107,7 @@ export function AppSidebar() {
                 href={item.href}
                 className={`flex min-w-[86px] shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[11px] font-medium transition-all ${
                   active
-                    ? "bg-blue-600 text-white shadow-[0_10px_24px_rgba(37,99,235,0.24)]"
+                    ? "bg-fuchsia-600 text-white shadow-[0_10px_24px_rgba(192,38,211,0.24)]"
                     : "bg-white text-[var(--muted-strong)]"
                 }`}
               >

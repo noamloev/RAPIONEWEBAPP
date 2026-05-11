@@ -116,7 +116,7 @@ function MetricCard({
           <p className="mt-2 text-sm leading-5 text-[var(--muted)]">{note}</p>
         </div>
 
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[var(--primary-dark)] shadow-sm">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-fuchsia-50 text-[var(--primary-dark)] shadow-sm">
           <Icon className="h-5 w-5" />
         </div>
       </div>
@@ -319,7 +319,7 @@ export default function DashboardPage() {
         <button
           onClick={() => loadDashboard({ silent: true })}
           disabled={loading || refreshing}
-          className="flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--primary-dark)] shadow-[var(--shadow-card)] transition hover:bg-[var(--card-soft)] focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--primary-dark)] shadow-[var(--shadow-card)] transition hover:bg-[var(--card-soft)] focus:outline-none focus:ring-4 focus:ring-fuchsia-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
           {refreshing ? t("common.refreshing") : t("pages.dashboard.refresh")}
@@ -364,7 +364,7 @@ export default function DashboardPage() {
           <Panel
             title={t("pages.dashboard.operations_pulse")}
             description={t("pages.dashboard.operations_pulse_desc")}
-            className="bg-[linear-gradient(170deg,#ffffff_0%,#f8fbff_58%,#eff6ff_100%)]"
+            className="bg-[linear-gradient(170deg,#ffffff_0%,#fff7fd_52%,#faf1ff_100%)]"
           >
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm">

@@ -205,7 +205,7 @@ export const translations: Record<AppLanguage, Dict> = {
     "shell.theme": "Theme",
     "shell.status": "Status",
     "shell.ready": "Ready",
-    "shell.luxury_rose": "Operations Blue",
+    "shell.luxury_rose": "Royal Plum",
     "shell.manage_text":
       "Track company inventory, reporting, statistics, and daily actions from one clear management workspace.",
 
@@ -633,7 +633,7 @@ export const translations: Record<AppLanguage, Dict> = {
 "pages.dashboard.audit_queue": "Audit Queue",
 "pages.dashboard.monitored": "Monitored",
 "pages.dashboard.workspace_style": "Workspace Style",
-"pages.dashboard.luxury_rose_system": "Operations blue system",
+"pages.dashboard.luxury_rose_system": "Royal plum system",
 "pages.dashboard.luxury_rose_desc": "The app now feels clearer and more management-focused without changing how any buttons or workflows behave.",
 "pages.dashboard.premium_sidebar": "Focused sidebar navigation",
 "pages.dashboard.sticky_header": "Sticky top header",
@@ -693,7 +693,7 @@ export const translations: Record<AppLanguage, Dict> = {
     "shell.theme": "ערכת נושא",
     "shell.status": "סטטוס",
     "shell.ready": "מוכן",
-    "shell.luxury_rose": "Operations Blue",
+    "shell.luxury_rose": "Royal Plum",
     "shell.manage_text":
       "נהל מלאי, דוחות, סטטיסטיקות ותהליכי עבודה מממשק בקרה אחד מסודר.",
 
@@ -1111,8 +1111,8 @@ export const translations: Record<AppLanguage, Dict> = {
 "pages.dashboard.audit_queue": "תור ביקורת",
 "pages.dashboard.monitored": "במעקב",
 "pages.dashboard.workspace_style": "סגנון סביבת העבודה",
-"pages.dashboard.luxury_rose_system": "מערכת כחול תפעולי",
-"pages.dashboard.luxury_rose_desc": "האפליקציה ברורה יותר וממוקדת ניהול בלי לשנות איך הכפתורים או תהליכי העבודה פועלים.",
+"pages.dashboard.luxury_rose_system": "מערכת סגול מלכותי",
+"pages.dashboard.luxury_rose_desc": "האפליקציה ברורה יותר, עם מראה ורוד וסגול ממוקד ניהול, בלי לשנות איך הכפתורים או תהליכי העבודה פועלים.",
 "pages.dashboard.premium_sidebar": "ניווט צד ממוקד",
 "pages.dashboard.sticky_header": "כותרת עליונה דביקה",
 "pages.dashboard.softer_cards": "כרטיסים רכים יותר ועומק נקי יותר",

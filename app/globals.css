@@ -1,24 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
+  --background: #fff7fd;
   --background-soft: #ffffff;
-  --foreground: #0f172a;
+  --foreground: #241126;
 
   --card: rgba(255, 255, 255, 0.92);
   --card-strong: #ffffff;
-  --card-soft: #eef4ff;
+  --card-soft: #faf1ff;
 
-  --border: #d8e2f3;
-  --border-strong: #9fb7dc;
+  --border: #ead7f8;
+  --border-strong: #c084fc;
 
-  --primary: #2563eb;
-  --primary-strong: #1d4ed8;
-  --primary-dark: #1e40af;
-  --primary-deep: #172554;
+  --primary: #c026d3;
+  --primary-strong: #a21caf;
+  --primary-dark: #86198f;
+  --primary-deep: #4a044e;
 
   --accent: #f59e0b;
-  --accent-strong: #d97706;
+  --accent-strong: #be185d;
 
   --muted: #64748b;
   --muted-strong: #475569;
@@ -31,20 +31,20 @@
   --danger-border: #fecaca;
   --danger-text: #b91c1c;
 
-  --shadow-soft: 0 18px 42px rgba(15, 23, 42, 0.08);
-  --shadow-card: 0 12px 28px rgba(15, 23, 42, 0.07);
-  --shadow-strong: 0 24px 62px rgba(15, 23, 42, 0.16);
+  --shadow-soft: 0 18px 42px rgba(112, 26, 117, 0.08);
+  --shadow-card: 0 12px 28px rgba(112, 26, 117, 0.07);
+  --shadow-strong: 0 24px 62px rgba(76, 29, 149, 0.16);
 }
 
 html,
 body {
   min-height: 100%;
   background:
-    linear-gradient(90deg, rgba(37, 99, 235, 0.08) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(37, 99, 235, 0.06) 1px, transparent 1px),
-    radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 30%),
-    radial-gradient(circle at top right, rgba(245, 158, 11, 0.11), transparent 24%),
-    linear-gradient(180deg, #f8fafc 0%, #eef4ff 50%, #ffffff 100%);
+    linear-gradient(90deg, rgba(192, 38, 211, 0.08) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(168, 85, 247, 0.06) 1px, transparent 1px),
+    radial-gradient(circle at top left, rgba(217, 70, 239, 0.14), transparent 30%),
+    radial-gradient(circle at top right, rgba(245, 158, 11, 0.1), transparent 24%),
+    linear-gradient(180deg, #fff7fd 0%, #faf1ff 50%, #ffffff 100%);
   background-size:
     48px 48px,
     48px 48px,
@@ -73,7 +73,7 @@ body {
 }
 
 ::selection {
-  background: rgba(37, 99, 235, 0.2);
+  background: rgba(192, 38, 211, 0.2);
 }
 
 input,
@@ -95,8 +95,8 @@ button {
 
 .luxury-ring {
   box-shadow:
-    0 0 0 1px rgba(148, 163, 184, 0.28),
-    0 12px 28px rgba(15, 23, 42, 0.08);
+    0 0 0 1px rgba(216, 180, 254, 0.42),
+    0 12px 28px rgba(112, 26, 117, 0.08);
 }
 body[data-dir="rtl"] {
   direction: rtl;

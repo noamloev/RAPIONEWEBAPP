@@ -56,12 +56,12 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(37,99,235,0.08)_1px,transparent_1px),linear-gradient(180deg,rgba(37,99,235,0.06)_1px,transparent_1px),linear-gradient(180deg,#f8fafc_0%,#eef4ff_52%,#ffffff_100%)] bg-[size:48px_48px,48px_48px,auto]" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(192,38,211,0.08)_1px,transparent_1px),linear-gradient(180deg,rgba(168,85,247,0.06)_1px,transparent_1px),linear-gradient(180deg,#fff7fd_0%,#faf1ff_52%,#ffffff_100%)] bg-[size:48px_48px,48px_48px,auto]" />
 
       <div className="relative z-10 grid w-full max-w-6xl overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-strong)] lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="hidden bg-slate-950 p-10 text-white lg:flex lg:flex-col lg:justify-between">
+        <div className="hidden bg-[#2a0d31] p-10 text-white lg:flex lg:flex-col lg:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-100">
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-100">
               <ShieldCheck className="h-3.5 w-3.5" />
               Manager Workspace
             </div>
@@ -91,7 +91,7 @@ export default function LoginPage() {
                 Data-first interface
               </p>
               <p className="mt-1 text-sm leading-6 text-slate-300">
-                Blue operational surfaces with amber highlights for items that need attention.
+                Pink and purple operational surfaces with amber highlights for items that need attention.
               </p>
             </div>
           </div>
@@ -120,7 +120,7 @@ export default function LoginPage() {
             ) : null}
 
             <form onSubmit={handleLogin} className="space-y-4">
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 transition focus-within:border-[var(--primary)] focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100">
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 transition focus-within:border-[var(--primary)] focus-within:bg-white focus-within:ring-4 focus-within:ring-fuchsia-100">
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
                   Username
                 </label>
@@ -135,7 +135,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 transition focus-within:border-[var(--primary)] focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100">
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-soft)] px-4 py-3 transition focus-within:border-[var(--primary)] focus-within:bg-white focus-within:ring-4 focus-within:ring-fuchsia-100">
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
                   Password
                 </label>
@@ -154,7 +154,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-2xl bg-[var(--primary-strong)] px-4 py-3.5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(37,99,235,0.28)] transition hover:bg-[var(--primary-dark)] focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-2xl bg-[var(--primary-strong)] px-4 py-3.5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(192,38,211,0.28)] transition hover:bg-[var(--primary-dark)] focus:outline-none focus:ring-4 focus:ring-fuchsia-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Signing in..." : "Sign In"}
               </button>

@@ -172,7 +172,7 @@ export default function ProductStatisticsPage() {
               <button
                 onClick={loadMonthlyStatsFromOnline}
                 disabled={loading}
-                className="rounded-2xl bg-[var(--primary-strong)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(37,99,235,0.24)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-2xl bg-[var(--primary-strong)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(192,38,211,0.24)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? t("common.refreshing") : t("pages.product_stats.get_button")}
               </button>

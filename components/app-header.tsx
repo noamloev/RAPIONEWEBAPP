@@ -218,7 +218,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
             <div className="relative">
               <button
                 onClick={() => setAlertsOpen((v) => !v)}
-                className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--primary-dark)] shadow-sm transition hover:bg-[var(--card-soft)] hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-100"
+                className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--primary-dark)] shadow-sm transition hover:bg-[var(--card-soft)] hover:shadow-md focus:outline-none focus:ring-4 focus:ring-fuchsia-100"
               >
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 ? (
@@ -429,7 +429,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
                   await markRead(selectedReceiptsAlert.id);
                   setSelectedReceiptsAlert(null);
                 }}
-                className="rounded-2xl bg-[var(--primary-strong)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(37,99,235,0.24)] transition hover:bg-[var(--primary-dark)]"
+                className="rounded-2xl bg-[var(--primary-strong)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(192,38,211,0.24)] transition hover:bg-[var(--primary-dark)]"
               >
                 {t("header.mark_read")}
               </button>
