@@ -41,6 +41,13 @@ type InventoryRow = {
   qty: number;
 };
 
+type DisplayInventoryRow = {
+  branch?: string;
+  item_code: string;
+  item_name: string;
+  qty: number;
+};
+
 type InventoryHistoryRow = {
   action_group_id: string;
   created_at: string | null;
@@ -271,6 +278,39 @@ export default function InventoryPage() {
 
   const undoRowsSorted = useMemo(() => undoPreviewRows ?? [], [undoPreviewRows]);
 
+  const displayRows = useMemo<DisplayInventoryRow[]>(() => {
+    const grouped = new Map<string, DisplayInventoryRow>();
+
+    for (const row of rows) {
+      const key = `${row.branch || ""}::${row.item_name.trim().toLowerCase()}`;
+      const existing = grouped.get(key);
+      if (!existing) {
+        grouped.set(key, {
+          branch: row.branch,
+          item_code: row.item_code,
+          item_name: row.item_name,
+          qty: Number(row.qty || 0),
+        });
+        continue;
+      }
+
+      existing.qty += Number(row.qty || 0);
+
+      const currentCodes = new Set(
+        existing.item_code
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean)
+      );
+      currentCodes.add(row.item_code);
+      existing.item_code = Array.from(currentCodes).join(", ");
+    }
+
+    return Array.from(grouped.values()).sort((a, b) =>
+      a.item_name.localeCompare(b.item_name, "he")
+    );
+  }, [rows]);
+
   function openCtpModal() {
     setCtpRows([{ item_code: "", amount_at_date: "", date_str: "" }]);
     setCtpResults(null);
@@ -345,7 +385,7 @@ export default function InventoryPage() {
         ) : null}
 
         <div className="grid gap-4 md:grid-cols-4">
-          <SummaryCard title={t("pages.inventory.rows_loaded")} value={rows.length} />
+          <SummaryCard title={t("pages.inventory.rows_loaded")} value={displayRows.length} />
           <SummaryCard title={t("pages.inventory.selected_branch")} value={selectedBranch || "-"} />
           <SummaryCard
             title={t("pages.inventory.status")}
@@ -465,14 +505,14 @@ export default function InventoryPage() {
               t("table.qty"),
             ]}
           >
-            {rows.length === 0 ? (
+            {displayRows.length === 0 ? (
               <tr>
                 <td colSpan={3} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
                   {t("pages.inventory.empty")}
                 </td>
               </tr>
             ) : (
-              rows.map((row) => (
+              displayRows.map((row) => (
                 <tr
                   key={`${row.item_code}-${row.item_name}`}
                   className="hover:bg-[var(--card-soft)]"
