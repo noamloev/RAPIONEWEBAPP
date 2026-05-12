@@ -48,6 +48,13 @@ type DisplayInventoryRow = {
   qty: number;
 };
 
+function normalizeInventoryName(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "");
+}
+
 type InventoryHistoryRow = {
   action_group_id: string;
   created_at: string | null;
@@ -282,7 +289,7 @@ export default function InventoryPage() {
     const grouped = new Map<string, DisplayInventoryRow>();
 
     for (const row of rows) {
-      const key = `${row.branch || ""}::${row.item_name.trim().toLowerCase()}`;
+      const key = `${row.branch || ""}::${normalizeInventoryName(row.item_name)}`;
       const existing = grouped.get(key);
       if (!existing) {
         grouped.set(key, {
