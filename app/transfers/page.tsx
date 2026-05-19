@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PageShell } from "@/components/page-shell";
 import {
   DataTable,
+  PrimaryButton,
   SecondaryButton,
   SectionCard,
   SelectInput,
@@ -14,6 +15,24 @@ import { TransferRow } from "@/lib/types";
 import { useLanguage } from "@/components/language-provider";
 
 type Branch = { id: number; name: string };
+type RevertEffect = {
+  branch_name: string;
+  direction: string;
+  item_code: string;
+  item_name: string;
+  transfer_qty: number;
+  current_qty: number;
+  after_qty: number;
+  sold_since_transfer_change: number;
+};
+type RevertPreview = {
+  transfer_id: string;
+  status: string;
+  from_branch_name: string;
+  to_branch_name: string;
+  inventory_changed_at?: string | null;
+  effects: RevertEffect[];
+};
 
 const MOCK_TRANSFERS: TransferRow[] = [
   {
@@ -43,12 +62,14 @@ const STATUS_STYLES: Record<string, string> = {
   DRAFT: "bg-amber-100 text-amber-800",
   IN_TRANSIT: "bg-fuchsia-100 text-fuchsia-700",
   RECEIVED: "bg-emerald-100 text-emerald-700",
+  REVERTED: "bg-slate-100 text-slate-700",
 };
 
 const STATUS_KEY: Record<string, string> = {
   DRAFT: "pages.transfers.status_draft",
   IN_TRANSIT: "pages.transfers.status_in_transit",
   RECEIVED: "pages.transfers.status_received",
+  REVERTED: "pages.transfers.status_reverted",
 };
 
 function StatusBadge({ status, label }: { status: string; label: string }) {
@@ -67,7 +88,11 @@ export default function TransfersPage() {
   const [rows, setRows] = useState<TransferRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingTransferId, setDeletingTransferId] = useState<string | null>(null);
+  const [revertingTransferId, setRevertingTransferId] = useState<string | null>(null);
+  const [previewingTransferId, setPreviewingTransferId] = useState<string | null>(null);
+  const [revertPreview, setRevertPreview] = useState<RevertPreview | null>(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [selectedBranch, setSelectedBranch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
 
@@ -97,6 +122,8 @@ export default function TransfersPage() {
     try {
       setLoading(true);
       setError("");
+      setNotice("");
+      setRevertPreview(null);
       await loadBranches();
       await loadTransfers();
     } catch (err: unknown) {
@@ -115,6 +142,8 @@ export default function TransfersPage() {
     try {
       setDeletingTransferId(transferId);
       setError("");
+      setNotice("");
+      setRevertPreview(null);
       await onlineApi.delete(`/transfers/${transferId}`);
       setRows((current) => current.filter((row) => row.id !== transferId));
     } catch (err: unknown) {
@@ -126,6 +155,61 @@ export default function TransfersPage() {
       setError(msg);
     } finally {
       setDeletingTransferId(null);
+    }
+  }
+
+  async function revertTransfer(transferId: string) {
+    try {
+      setRevertingTransferId(transferId);
+      setError("");
+      setNotice("");
+      const res = await onlineApi.post(`/transfers/${transferId}/revert`);
+      setRows((current) =>
+        current.map((row) =>
+          row.id === transferId ? { ...row, status: "REVERTED" } : row
+        )
+      );
+      setRevertPreview(null);
+      const checked = Array.isArray(res.data?.sales_checked)
+        ? res.data.sales_checked.reduce(
+            (sum: number, item: { sold_since_transfer_change?: number }) =>
+              sum + Number(item.sold_since_transfer_change || 0),
+            0
+          )
+        : 0;
+      setNotice(
+        t("pages.transfers.revert_success").replace("{count}", String(checked))
+      );
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { detail?: string } }; message?: string })
+          ?.response?.data?.detail ||
+        (err as { message?: string })?.message ||
+        t("pages.transfers.revert_failed");
+      setError(msg);
+    } finally {
+      setRevertingTransferId(null);
+    }
+  }
+
+  async function openRevertPreview(transferId: string) {
+    try {
+      setPreviewingTransferId(transferId);
+      setError("");
+      setNotice("");
+      const res = await onlineApi.get<RevertPreview>(
+        `/transfers/${transferId}/revert-preview`
+      );
+      setRevertPreview(res.data);
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { detail?: string } }; message?: string })
+          ?.response?.data?.detail ||
+        (err as { message?: string })?.message ||
+        t("pages.transfers.revert_preview_failed");
+      setError(msg);
+    } finally {
+      setPreviewingTransferId(null);
     }
   }
 
@@ -152,6 +236,97 @@ export default function TransfersPage() {
           <div className="rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-text)]">
             {error}
           </div>
+        ) : null}
+        {notice ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            {notice}
+          </div>
+        ) : null}
+        {revertPreview ? (
+          <SectionCard
+            title={t("pages.transfers.revert_preview_title")}
+            description={t("pages.transfers.revert_preview_desc")}
+          >
+            <div className="mb-4 grid gap-3 text-sm md:grid-cols-3">
+              <div>
+                <p className="text-[var(--muted)]">{t("table.transfer_id")}</p>
+                <p className="font-mono text-xs text-[var(--foreground)]">
+                  {revertPreview.transfer_id}
+                </p>
+              </div>
+              <div>
+                <p className="text-[var(--muted)]">{t("table.status")}</p>
+                <p className="text-[var(--foreground)]">
+                  {t(STATUS_KEY[revertPreview.status] ?? "pages.transfers.status_draft")}
+                </p>
+              </div>
+              <div>
+                <p className="text-[var(--muted)]">
+                  {t("pages.transfers.inventory_changed_at")}
+                </p>
+                <p className="text-[var(--foreground)]">
+                  {revertPreview.inventory_changed_at
+                    ? new Date(revertPreview.inventory_changed_at).toLocaleString()
+                    : "-"}
+                </p>
+              </div>
+            </div>
+
+            <DataTable
+              columns={[
+                t("table.branch"),
+                t("table.product"),
+                t("pages.transfers.revert_action"),
+                t("pages.transfers.transfer_qty"),
+                t("table.current_qty"),
+                t("pages.transfers.after_revert_qty"),
+                t("pages.transfers.sales_since_change"),
+              ]}
+            >
+              {revertPreview.effects.map((effect, index) => (
+                <tr key={`${effect.branch_name}-${effect.item_code}-${index}`}>
+                  <td className="px-4 py-3 text-sm text-[var(--foreground)]">
+                    {effect.branch_name}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[var(--foreground)]">
+                    <span className="font-medium">{effect.item_name}</span>{" "}
+                    <span className="text-[var(--muted)]">({effect.item_code})</span>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[var(--foreground)]">
+                    {effect.direction === "restore_source"
+                      ? t("pages.transfers.restore_source")
+                      : t("pages.transfers.remove_destination")}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[var(--foreground)]">
+                    {effect.transfer_qty}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[var(--foreground)]">
+                    {effect.current_qty}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-semibold text-[var(--foreground)]">
+                    {effect.after_qty}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[var(--foreground)]">
+                    {effect.sold_since_transfer_change}
+                  </td>
+                </tr>
+              ))}
+            </DataTable>
+
+            <div className="mt-4 flex flex-wrap gap-3">
+              <PrimaryButton
+                onClick={() => revertTransfer(revertPreview.transfer_id)}
+                disabled={revertingTransferId === revertPreview.transfer_id}
+              >
+                {revertingTransferId === revertPreview.transfer_id
+                  ? t("pages.transfers.reverting")
+                  : t("pages.transfers.confirm_revert")}
+              </PrimaryButton>
+              <SecondaryButton onClick={() => setRevertPreview(null)}>
+                {t("common.cancel")}
+              </SecondaryButton>
+            </div>
+          </SectionCard>
         ) : null}
 
         <div className="grid gap-4 md:grid-cols-4">
@@ -189,6 +364,7 @@ export default function TransfersPage() {
                 <option value="DRAFT">{t("pages.transfers.pending_draft")}</option>
                 <option value="IN_TRANSIT">{t("pages.transfers.in_transit")}</option>
                 <option value="RECEIVED">{t("pages.transfers.status_received")}</option>
+                <option value="REVERTED">{t("pages.transfers.status_reverted")}</option>
               </SelectInput>
             </div>
 
@@ -271,6 +447,16 @@ export default function TransfersPage() {
                         {deletingTransferId === row.id
                           ? t("pages.transfers.deleting_draft")
                           : t("pages.transfers.delete_draft")}
+                      </SecondaryButton>
+                    ) : row.status === "IN_TRANSIT" || row.status === "RECEIVED" ? (
+                      <SecondaryButton
+                        onClick={() => openRevertPreview(row.id)}
+                        disabled={previewingTransferId === row.id}
+                        className="px-4 py-2 text-xs"
+                      >
+                        {previewingTransferId === row.id
+                          ? t("pages.transfers.loading_preview")
+                          : t("pages.transfers.revert")}
                       </SecondaryButton>
                     ) : (
                       <span className="text-[var(--muted)]">-</span>
