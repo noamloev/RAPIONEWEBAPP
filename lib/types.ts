@@ -32,12 +32,14 @@ export type SaleRow = {
   invoice_no?: string | null;
   customer_name?: string | null;
   mobile?: string | null;
+  item_code?: string | null;
   item_name: string;
   quantity: number;
   unit_price?: number | null;
   total?: number | null;
   line_key: string;
   classification?: string | null;
+  deduction_qty?: number | null;
 };
 
 export type FlagRow = {
@@ -82,6 +84,7 @@ export type InventorySetPayload = {
 };
 
 export type InventoryHistoryRow = {
+  id: number;
   action_group_id: string;
   created_at: string;
   change_type: string;

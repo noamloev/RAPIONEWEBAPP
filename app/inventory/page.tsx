@@ -30,6 +30,8 @@ type CtpResultRow = {
   sold_since?: number;
   old_qty?: number;
   new_qty?: number;
+  reference_datetime?: string;
+  reference_created_at_utc?: string;
   action_group_id?: string;
   error?: string;
 };
@@ -56,6 +58,7 @@ function normalizeInventoryName(value: string): string {
 }
 
 type InventoryHistoryRow = {
+  id: number;
   action_group_id: string;
   created_at: string | null;
   change_type: string;
@@ -68,6 +71,17 @@ type InventoryHistoryRow = {
   qty_delta: number;
   related_branch_name: string | null;
   is_reverted: boolean;
+};
+
+type MonthlySalesSummaryRow = {
+  branch: string;
+  item_code: string;
+  item_name: string;
+  classification: string;
+  sale_lines: number;
+  qty: number;
+  revenue: number;
+  deducted_qty: number;
 };
 
 export default function InventoryPage() {
@@ -89,8 +103,12 @@ export default function InventoryPage() {
   const [success, setSuccess] = useState("");
 
   const [undoPreviewRows, setUndoPreviewRows] = useState<InventoryHistoryRow[] | null>(null);
-  const [undoPreviewActionGroupId, setUndoPreviewActionGroupId] = useState<string | null>(null);
+  const [selectedUndoIds, setSelectedUndoIds] = useState<number[]>([]);
   const [undoModalOpen, setUndoModalOpen] = useState(false);
+  const [undoDate, setUndoDate] = useState(new Date().toISOString().slice(0, 10));
+  const [summaryMonth, setSummaryMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [monthlySummaryRows, setMonthlySummaryRows] = useState<MonthlySalesSummaryRow[]>([]);
+  const [summarizingMonth, setSummarizingMonth] = useState(false);
 
   // Change the Past modal state
   const [ctpModalOpen, setCtpModalOpen] = useState(false);
@@ -217,27 +235,18 @@ export default function InventoryPage() {
       setSuccess("");
 
       const historyRes = await onlineApi.get<InventoryHistoryRow[]>("/inventory/history", {
-        params: { limit: 100 },
+        params: { date_str: undoDate, limit: 500 },
       });
 
       const history = historyRes.data ?? [];
-
-      const latestForBranch = history.find(
-        (row) => row.branch_name === selectedBranch && !row.is_reverted
-      );
-
-      if (!latestForBranch) {
+      const undoableRows = history.filter((row) => !row.is_reverted);
+      if (!undoableRows.length) {
         setError(t("pages.inventory.no_undoable_change"));
         return;
       }
 
-      const groupRows = history.filter(
-        (row) =>
-          row.action_group_id === latestForBranch.action_group_id && !row.is_reverted
-      );
-
-      setUndoPreviewRows(groupRows);
-      setUndoPreviewActionGroupId(latestForBranch.action_group_id);
+      setUndoPreviewRows(undoableRows);
+      setSelectedUndoIds([]);
       setUndoModalOpen(true);
     } catch (err: any) {
       setError(
@@ -249,21 +258,24 @@ export default function InventoryPage() {
   }
 
   async function confirmUndo() {
-    if (!undoPreviewActionGroupId) return;
+    if (!selectedUndoIds.length) {
+      setError(t("pages.inventory.select_rows_to_undo"));
+      return;
+    }
 
     try {
       setUndoing(true);
       setError("");
       setSuccess("");
 
-      await onlineApi.post("/inventory/undo", {
-        action_group_id: undoPreviewActionGroupId,
+      await onlineApi.post("/inventory/undo-selected", {
+        change_log_ids: selectedUndoIds,
       });
 
       setSuccess(t("pages.inventory.undo_success"));
       setUndoModalOpen(false);
       setUndoPreviewRows(null);
-      setUndoPreviewActionGroupId(null);
+      setSelectedUndoIds([]);
       await loadInventory();
     } catch (err: any) {
       setError(
@@ -280,7 +292,7 @@ export default function InventoryPage() {
     if (undoing) return;
     setUndoModalOpen(false);
     setUndoPreviewRows(null);
-    setUndoPreviewActionGroupId(null);
+    setSelectedUndoIds([]);
   }
 
   const undoRowsSorted = useMemo(() => undoPreviewRows ?? [], [undoPreviewRows]);
@@ -340,6 +352,33 @@ export default function InventoryPage() {
 
   function ctpUpdateRow(idx: number, field: keyof CtpInputRow, value: string) {
     setCtpRows((prev) => prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r)));
+  }
+
+  function toggleUndoRow(id: number) {
+    setSelectedUndoIds((prev) =>
+      prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]
+    );
+  }
+
+  async function summarizeMonth() {
+    if (!summaryMonth) return;
+    const [yearText, monthText] = summaryMonth.split("-");
+    try {
+      setSummarizingMonth(true);
+      setError("");
+      const res = await onlineApi.get<MonthlySalesSummaryRow[]>("/report/monthly-sales-summary", {
+        params: {
+          year: Number(yearText),
+          month: Number(monthText),
+          ...(selectedBranch ? { branch: selectedBranch } : {}),
+        },
+      });
+      setMonthlySummaryRows(res.data ?? []);
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || err?.message || t("pages.inventory.month_summary_failed"));
+    } finally {
+      setSummarizingMonth(false);
+    }
   }
 
   async function runCtpModal() {
@@ -432,12 +471,19 @@ export default function InventoryPage() {
               {t("common.refresh")}
             </SecondaryButton>
 
+            <TextInput
+              type="date"
+              value={undoDate}
+              onChange={(e) => setUndoDate(e.target.value)}
+              className="w-auto min-w-[160px]"
+            />
+
             <SecondaryButton
               onClick={openUndoPreview}
               disabled={!selectedBranch || undoing}
               className="border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
             >
-              {undoing ? t("pages.inventory.undoing") : t("pages.inventory.undo_last_change")}
+              {undoing ? t("pages.inventory.undoing") : t("pages.inventory.undo_by_date")}
             </SecondaryButton>
 
             <SecondaryButton
@@ -448,6 +494,20 @@ export default function InventoryPage() {
               {t("pages.inventory.change_the_past")}
             </SecondaryButton>
 
+            <TextInput
+              type="month"
+              value={summaryMonth}
+              onChange={(e) => setSummaryMonth(e.target.value)}
+              className="w-auto min-w-[150px]"
+            />
+
+            <SecondaryButton
+              onClick={summarizeMonth}
+              disabled={summarizingMonth || !summaryMonth}
+              className="border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+            >
+              {summarizingMonth ? t("pages.inventory.summarizing") : t("pages.inventory.summarize_month")}
+            </SecondaryButton>
           </div>
         </SectionCard>
 
@@ -539,6 +599,39 @@ export default function InventoryPage() {
           </DataTable>
         </SectionCard>
 
+        {monthlySummaryRows.length ? (
+          <SectionCard
+            title={t("pages.inventory.month_summary_title")}
+            description={t("pages.inventory.month_summary_desc")}
+          >
+            <DataTable
+              columns={[
+                t("table.branch"),
+                t("table.code"),
+                t("table.product"),
+                t("table.type"),
+                t("table.count"),
+                t("table.qty"),
+                t("pages.inventory.deducted_qty"),
+                t("pages.daily.revenue"),
+              ]}
+            >
+              {monthlySummaryRows.map((row, idx) => (
+                <tr key={`${row.branch}-${row.item_code}-${row.classification}-${idx}`}>
+                  <td className="px-4 py-4 text-sm text-[var(--foreground)]">{row.branch}</td>
+                  <td className="px-4 py-4 text-sm font-medium text-[var(--primary-dark)]">{row.item_code}</td>
+                  <td className="px-4 py-4 text-sm text-[var(--foreground)]">{row.item_name}</td>
+                  <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.classification || "-"}</td>
+                  <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.sale_lines}</td>
+                  <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.qty}</td>
+                  <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.deducted_qty}</td>
+                  <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.revenue}</td>
+                </tr>
+              ))}
+            </DataTable>
+          </SectionCard>
+        ) : null}
+
         {ctpModalOpen ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4">
             <div className="w-full max-w-4xl rounded-3xl border border-violet-200 bg-white p-6 shadow-2xl">
@@ -580,8 +673,8 @@ export default function InventoryPage() {
                       onChange={(e) => ctpUpdateRow(idx, "amount_at_date", e.target.value)}
                     />
                     <input
-                      type="text"
-                      className="w-36 rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-300"
+                      type="datetime-local"
+                      className="w-48 rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-300"
                       placeholder={t("pages.inventory.ctp_date")}
                       value={row.date_str}
                       onChange={(e) => ctpUpdateRow(idx, "date_str", e.target.value)}
@@ -648,12 +741,18 @@ export default function InventoryPage() {
                 <p className="mt-1 text-sm text-rose-500">
                   {t("pages.inventory.confirm_undo_desc")}
                 </p>
+                <p className="mt-1 text-xs text-rose-500">
+                  {t("pages.inventory.undo_selected_count")}: {selectedUndoIds.length}
+                </p>
               </div>
 
               <div className="overflow-x-auto rounded-2xl border border-rose-100">
                 <table className="min-w-full divide-y divide-rose-100">
                   <thead className="bg-rose-50">
                     <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">
+                        {t("table.action")}
+                      </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-rose-700">
                         {t("table.branch")}
                       </th>
@@ -674,6 +773,14 @@ export default function InventoryPage() {
                   <tbody className="divide-y divide-rose-50 bg-white">
                     {undoRowsSorted.map((row, idx) => (
                       <tr key={`${row.action_group_id}-${row.branch_name}-${row.product_code}-${idx}`}>
+                        <td className="px-4 py-4 text-sm text-rose-800">
+                          <input
+                            type="checkbox"
+                            checked={selectedUndoIds.includes(row.id)}
+                            onChange={() => toggleUndoRow(row.id)}
+                            className="h-4 w-4"
+                          />
+                        </td>
                         <td className="px-4 py-4 text-sm text-rose-800">
                           {row.branch_name}
                         </td>
@@ -700,7 +807,7 @@ export default function InventoryPage() {
                   {t("common.cancel")}
                 </SecondaryButton>
 
-                <PrimaryButton onClick={confirmUndo} disabled={undoing}>
+                <PrimaryButton onClick={confirmUndo} disabled={undoing || !selectedUndoIds.length}>
                   {undoing ? t("pages.inventory.undoing") : t("pages.inventory.yes_undo_changes")}
                 </PrimaryButton>
               </div>

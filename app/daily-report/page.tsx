@@ -65,6 +65,7 @@ export default function DailyReportPage() {
   const [loading, setLoading] = useState(true);
   const [runningDaily, setRunningDaily] = useState(false);
   const [checkingReceipts, setCheckingReceipts] = useState(false);
+  const [deductingLineKey, setDeductingLineKey] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -279,6 +280,26 @@ export default function DailyReportPage() {
       setError(e?.response?.data?.detail || e?.message || t("pages.daily.receipts_failed"));
     } finally {
       setCheckingReceipts(false);
+    }
+  }
+
+  async function handleDeductReviewedSale(lineKey: string) {
+    if (!lineKey) return;
+    const ok = window.confirm(t("pages.daily.confirm_deduct_inventory"));
+    if (!ok) return;
+
+    try {
+      setDeductingLineKey(lineKey);
+      setError("");
+      setSuccessMessage("");
+      await onlineApi.post("/sales/deduct-inventory", { line_key: lineKey });
+      setSuccessMessage(t("pages.daily.deduct_inventory_success"));
+      await Promise.all([loadSales(), loadInventoryChanges()]);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { detail?: string } }; message?: string };
+      setError(e?.response?.data?.detail || e?.message || t("pages.daily.deduct_inventory_failed"));
+    } finally {
+      setDeductingLineKey(null);
     }
   }
 
@@ -534,6 +555,7 @@ export default function DailyReportPage() {
                       t("table.type"), t("table.date"), t("table.branch"),
                       t("table.invoice"), t("table.customer"), t("table.item"),
                       t("table.qty"), t("table.unit_price"), t("table.total"),
+                      t("table.action"),
                     ].map((col) => (
                       <th key={col} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--primary-dark)]">
                         {col}
@@ -544,7 +566,7 @@ export default function DailyReportPage() {
                 <tbody className="divide-y divide-[var(--border)] bg-white">
                   {sales.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
+                      <td colSpan={10} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
                         {loading ? t("common.loading") : t("pages.daily.no_sales")}
                       </td>
                     </tr>
@@ -570,6 +592,25 @@ export default function DailyReportPage() {
                           <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.quantity}</td>
                           <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.unit_price ?? "-"}</td>
                           <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.total ?? "-"}</td>
+                          <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">
+                            {row.classification === "payment" ? (
+                              <button
+                                onClick={() => handleDeductReviewedSale(row.line_key)}
+                                disabled={deductingLineKey === row.line_key}
+                                className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:opacity-60"
+                              >
+                                {deductingLineKey === row.line_key
+                                  ? t("pages.daily.deducting_inventory")
+                                  : t("pages.daily.deduct_inventory")}
+                              </button>
+                            ) : row.deduction_qty != null && row.deduction_qty > 0 ? (
+                              <span className="rounded-xl bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
+                                {t("pages.daily.deducted")} {row.deduction_qty}
+                              </span>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
                         </tr>
                       );
                     })
