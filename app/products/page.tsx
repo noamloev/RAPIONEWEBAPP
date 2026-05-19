@@ -440,8 +440,8 @@ export default function ProductsPage() {
           </div>
         </section>
         {customModalOpen ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4">
-            <div className="w-full max-w-2xl rounded-3xl border border-teal-200 bg-white p-6 shadow-2xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/35 p-4">
+            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-teal-200 bg-white p-6 shadow-2xl">
               <div className="mb-5">
                 <h2 className="text-xl font-semibold text-teal-950">
                   {t("pages.inventory.custom_title")}
@@ -546,8 +546,8 @@ export default function ProductsPage() {
           </div>
         ) : null}
         {editingProduct ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4">
-            <div className="w-full max-w-2xl rounded-3xl border border-[var(--border)] bg-white p-6 shadow-2xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/35 p-4">
+            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-[var(--border)] bg-white p-6 shadow-2xl">
               <div className="mb-5">
                 <h2 className="text-xl font-semibold text-[var(--primary-deep)]">
                   {t("pages.products.edit_title")}

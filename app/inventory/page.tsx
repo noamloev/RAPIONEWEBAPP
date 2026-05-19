@@ -108,6 +108,7 @@ export default function InventoryPage() {
   const [undoDate, setUndoDate] = useState(new Date().toISOString().slice(0, 10));
   const [summaryMonth, setSummaryMonth] = useState(new Date().toISOString().slice(0, 7));
   const [monthlySummaryRows, setMonthlySummaryRows] = useState<MonthlySalesSummaryRow[]>([]);
+  const [monthSummaryModalOpen, setMonthSummaryModalOpen] = useState(false);
   const [summarizingMonth, setSummarizingMonth] = useState(false);
 
   // Change the Past modal state
@@ -374,6 +375,7 @@ export default function InventoryPage() {
         },
       });
       setMonthlySummaryRows(res.data ?? []);
+      setMonthSummaryModalOpen(true);
     } catch (err: any) {
       setError(err?.response?.data?.detail || err?.message || t("pages.inventory.month_summary_failed"));
     } finally {
@@ -599,42 +601,63 @@ export default function InventoryPage() {
           </DataTable>
         </SectionCard>
 
-        {monthlySummaryRows.length ? (
-          <SectionCard
-            title={t("pages.inventory.month_summary_title")}
-            description={t("pages.inventory.month_summary_desc")}
-          >
-            <DataTable
-              columns={[
-                t("table.branch"),
-                t("table.code"),
-                t("table.product"),
-                t("table.type"),
-                t("table.count"),
-                t("table.qty"),
-                t("pages.inventory.deducted_qty"),
-                t("pages.daily.revenue"),
-              ]}
-            >
-              {monthlySummaryRows.map((row, idx) => (
-                <tr key={`${row.branch}-${row.item_code}-${row.classification}-${idx}`}>
-                  <td className="px-4 py-4 text-sm text-[var(--foreground)]">{row.branch}</td>
-                  <td className="px-4 py-4 text-sm font-medium text-[var(--primary-dark)]">{row.item_code}</td>
-                  <td className="px-4 py-4 text-sm text-[var(--foreground)]">{row.item_name}</td>
-                  <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.classification || "-"}</td>
-                  <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.sale_lines}</td>
-                  <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.qty}</td>
-                  <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.deducted_qty}</td>
-                  <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.revenue}</td>
-                </tr>
-              ))}
-            </DataTable>
-          </SectionCard>
+        {monthSummaryModalOpen ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/35 p-4">
+            <div className="max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-3xl border border-emerald-200 bg-white p-6 shadow-2xl">
+              <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-semibold text-emerald-950">
+                    {t("pages.inventory.month_summary_title")}
+                  </h2>
+                  <p className="mt-1 text-sm text-emerald-600">
+                    {t("pages.inventory.month_summary_desc")}
+                  </p>
+                </div>
+                <SecondaryButton onClick={() => setMonthSummaryModalOpen(false)}>
+                  {t("common.close")}
+                </SecondaryButton>
+              </div>
+
+              <DataTable
+                columns={[
+                  t("table.branch"),
+                  t("table.code"),
+                  t("table.product"),
+                  t("table.type"),
+                  t("table.count"),
+                  t("table.qty"),
+                  t("pages.inventory.deducted_qty"),
+                  t("pages.daily.revenue"),
+                ]}
+              >
+                {monthlySummaryRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-sm text-[var(--muted)]">
+                      {t("pages.daily.no_sales")}
+                    </td>
+                  </tr>
+                ) : (
+                  monthlySummaryRows.map((row, idx) => (
+                    <tr key={`${row.branch}-${row.item_code}-${row.classification}-${idx}`}>
+                      <td className="px-4 py-4 text-sm text-[var(--foreground)]">{row.branch}</td>
+                      <td className="px-4 py-4 text-sm font-medium text-[var(--primary-dark)]">{row.item_code}</td>
+                      <td className="px-4 py-4 text-sm text-[var(--foreground)]">{row.item_name}</td>
+                      <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.classification || "-"}</td>
+                      <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.sale_lines}</td>
+                      <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.qty}</td>
+                      <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.deducted_qty}</td>
+                      <td className="px-4 py-4 text-sm text-[var(--muted-strong)]">{row.revenue}</td>
+                    </tr>
+                  ))
+                )}
+              </DataTable>
+            </div>
+          </div>
         ) : null}
 
         {ctpModalOpen ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4">
-            <div className="w-full max-w-4xl rounded-3xl border border-violet-200 bg-white p-6 shadow-2xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/35 p-4">
+            <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-violet-200 bg-white p-6 shadow-2xl">
               <div className="mb-4">
                 <h2 className="text-xl font-semibold text-violet-950">
                   {t("pages.inventory.ctp_title")}
@@ -732,8 +755,8 @@ export default function InventoryPage() {
         ) : null}
 
         {undoModalOpen ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4">
-            <div className="w-full max-w-3xl rounded-3xl border border-rose-200 bg-white p-6 shadow-2xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/35 p-4">
+            <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-rose-200 bg-white p-6 shadow-2xl">
               <div className="mb-4">
                 <h2 className="text-xl font-semibold text-rose-950">
                   {t("pages.inventory.confirm_undo")}

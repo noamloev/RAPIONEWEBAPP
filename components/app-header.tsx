@@ -326,7 +326,7 @@ export function AppHeader({ title, centerContent }: { title: string; centerConte
       </header>
 
       {selectedReceiptsAlert ? (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/45 p-4">
           <div className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-2xl">
             <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-4 py-4 sm:px-6 sm:py-5">
               <div className="min-w-0">
